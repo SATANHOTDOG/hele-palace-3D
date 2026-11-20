@@ -875,6 +875,7 @@
         <button class="tool-btn" data-tool="move">✋ 搬家</button>
         <button class="tool-btn" id="btn-rotate-dir">🔄 方向: 0°正面</button>
         <button class="tool-btn" data-tool="erase">🧹 移除</button>
+        <button class="tool-btn" id="btn-reset-default">🔄 重設預設</button>
         <button class="tool-btn save" id="btn-cloud-save">☁️ 雲端保存</button>
       </div>
       <div class="cat-tabs">
@@ -927,15 +928,15 @@
   const LINE_CONSULT_URL = `https://line.me/ti/p/~${KOBE_LINE_ID}`;
 
   const MAP_SIZE = 40;
-  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v2";
+  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v3";
 
   const DEFAULT_ASSETS = [
-    { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 3, Category: "NPC", Name: "家具專員KOBE", File: "Kobe", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.52, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.68, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.68, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
+    { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1.0, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1.0, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 3, Category: "NPC", Name: "家具專員KOBE", File: "Kobe", W: 1, H: 1, ScaleH: 1.0, Dialog: "", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.36, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.42, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.42, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
   ];
 
   // =========================================================
@@ -1052,7 +1053,6 @@
     const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
     const baseFile = files[frameIdx];
 
-    // faceDir 與 obj.dir 的相對方位：0=正面, 1=右側, 2=背面, 3=左側
     const rel = (faceDir - (asset._objDir || 0) + 4) % 4;
     const suffixes = ["", "_90", "_180", "_270"];
     return getSpriteImage(baseFile, suffixes[rel], true);
@@ -1071,7 +1071,7 @@
   }
 
   // =========================================================
-  // 4. 建立 40×40 預設大墩店地圖（方案 A：靠右牆一字排開，左側開放通道）
+  // 4. 建立 40×40 預設大墩店地圖（靠南牆縱向一字排開，面向大廳）
   // =========================================================
   function buildDefaultHolaMap() {
     for (let y = 0; y < MAP_SIZE; y++) {
@@ -1089,23 +1089,23 @@
 
     state.objects = [];
 
-    // 方案 A：從靠右牆(x=38)往左一字排開 6 座（12 格），正面朝向大門 (dir=0)
-    // 左側 x=26 完全留空作為員工與顧客通行走道
-    place(21, 37, 26, 0); // 1. 靠牆延伸櫃 (37, 38)
-    place(22, 35, 26, 0); // 2. POS機 (35, 36)
-    place(21, 33, 26, 0); // 3. 延伸櫃 (33, 34)
-    place(21, 31, 26, 0); // 4. 延伸櫃 (31, 32)
-    place(23, 29, 26, 0); // 5. POS機 (29, 30)
-    place(21, 27, 26, 0); // 6. 延伸櫃 (27, 28)
+    // 靠南牆(y=38)起往北縱向一字排開 6 座（12 格），正面朝左(dir=3)面向賣場大廳
+    // 上方 y=26 以上與右側 x=34~38 留空作為人員通行走道
+    place(21, 33, 37, 3); // 1. 靠牆延伸櫃 (y=37..38)
+    place(22, 33, 35, 3); // 2. POS機 (y=35..36)
+    place(21, 33, 33, 3); // 3. 延伸櫃 (y=33..34)
+    place(21, 33, 31, 3); // 4. 延伸櫃 (y=31..32)
+    place(23, 33, 29, 3); // 5. POS機 (y=29..30)
+    place(21, 33, 27, 3); // 6. 延伸櫃 (y=27..28)
 
-    // 櫃檯後方服務人員（面向大門 dir=0）
-    place(1, 37, 24, 0);  // 金漸層貓服務人員（右側櫃檯後方）
-    place(2, 27, 24, 0);  // 無毛貓服務人員（左側櫃檯後方）
+    // 櫃檯後方服務人員（緊貼櫃檯後方 x=34，面向大廳 dir=3）
+    place(1, 34, 35, 3);  // 金漸層貓服務人員（下側 POS/延伸櫃後方）
+    place(2, 34, 29, 3);  // 無毛貓服務人員（上側 POS/延伸櫃後方）
   }
 
   function encodeMapData() {
     return JSON.stringify({
-      v: 2,
+      v: 3,
       size: MAP_SIZE,
       objs: state.objects.map(o => [o.id, o.x, o.y, o.dir])
     });
@@ -1181,6 +1181,11 @@
     list.forEach(raw => {
       const id = parseInt(raw.ID);
       if (!id) return;
+      let scaleH = parseFloat(raw.ScaleH) || 1;
+      // 確保服務台與 POS 櫃檯維持腰部高度，不遮擋後方服務貓咪臉部
+      if (id === 21) scaleH = Math.min(scaleH, 0.36);
+      if (id === 22 || id === 23) scaleH = Math.min(scaleH, 0.42);
+
       const item = {
         ID: id,
         Category: String(raw.Category || "Furniture").trim(),
@@ -1188,7 +1193,7 @@
         File: String(raw.File || "").trim(),
         W: parseInt(raw.W) || 1,
         H: parseInt(raw.H) || 1,
-        ScaleH: parseFloat(raw.ScaleH) || 1,
+        ScaleH: scaleH,
         Dialog: String(raw.Dialog || "").trim(),
         LineBtn: String(raw.LineBtn || "").trim().toUpperCase(),
         Clicks: parseInt(raw.Clicks) || 0,
@@ -1268,7 +1273,7 @@
         return;
       }
     } catch (_) {}
-    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊前方櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
+    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
   }
 
   function formatPriceDisplay(val) {
@@ -1341,7 +1346,6 @@
     const H = canvas.height;
     const halfH = H * 0.5;
 
-    // 天花板與賣場地板
     const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
     ceilGrad.addColorStop(0, "#14171d");
     ceilGrad.addColorStop(1, "#262b35");
@@ -1463,20 +1467,18 @@
           scaleH: asset.ScaleH || 1
         });
       } else {
-        // Store / Furniture：建立固定於地面格線的 3D 立體方塊（0=南面, 1=東面, 2=北面, 3=西面）
         const x0 = bounds.minX;
         const x1 = bounds.maxX + 1;
         const y0 = bounds.minY;
         const y1 = bounds.maxY + 1;
-        const scaleH = asset.ScaleH || 0.65;
+        const scaleH = asset.ScaleH || 0.38;
 
         const faces = [];
-        if (py > y1) faces.push({ faceDir: 0, ax: x0, ay: y1, bx: x1, by: y1, shade: 1.0 });  // 南面
-        if (px > x1) faces.push({ faceDir: 1, ax: x1, ay: y1, bx: x1, by: y0, shade: 0.86 }); // 東面
-        if (py < y0) faces.push({ faceDir: 2, ax: x1, ay: y0, bx: x0, by: y0, shade: 0.94 }); // 北面
-        if (px < x0) faces.push({ faceDir: 3, ax: x0, ay: y0, bx: x0, by: y1, shade: 0.86 }); // 西面
+        if (py > y1) faces.push({ faceDir: 0, ax: x0, ay: y1, bx: x1, by: y1, shade: 1.0 });
+        if (px > x1) faces.push({ faceDir: 1, ax: x1, ay: y1, bx: x1, by: y0, shade: 0.86 });
+        if (py < y0) faces.push({ faceDir: 2, ax: x1, ay: y0, bx: x0, by: y0, shade: 0.94 });
+        if (px < x0) faces.push({ faceDir: 3, ax: x0, ay: y0, bx: x0, by: y1, shade: 0.86 });
 
-        // 若高度低於視線高度 (0.55)，先推入檯面頂板
         if (scaleH < 0.55 && faces.length > 0) {
           const maxFaceDist = Math.max(...faces.map(f => distPointToSegment(px, py, f.ax, f.ay, f.bx, f.by)));
           renderList.push({
@@ -1527,7 +1529,6 @@
       });
     }
 
-    // 由遠到近排序繪製
     renderList.sort((a, b) => b.sortDist - a.sortDist);
 
     const dirX = Math.cos(pAngle);
@@ -1550,7 +1551,6 @@
         continue;
       }
 
-      // NPC 與顧客立繪
       const spriteX = item.cx - px;
       const spriteY = item.cy - py;
 
@@ -1612,6 +1612,7 @@
         }
 
         renderedHitboxes3D.push({
+          isNpc: true,
           left: leftX,
           right: rightX,
           top: topY,
@@ -1633,7 +1634,6 @@
     updateCrosshairTarget();
   }
 
-  // 繪製 3D 櫃檯檯面頂板
   function draw3DBoxTop(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH) {
     const corners = [
       worldToCamera(item.x0, item.y0, px, py, dirX, dirY, planeX, planeY, invDet),
@@ -1665,7 +1665,6 @@
     ctx.restore();
   }
 
-  // 繪製 3D 固定面片（沿用與牆壁一致的透視投影 + 近平面裁切 + 垂直切片貼圖）
   function draw3DBoxFace(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, numRays, zBuffer, timeSec) {
     let cA = worldToCamera(item.ax, item.ay, px, py, dirX, dirY, planeX, planeY, invDet);
     let cB = worldToCamera(item.bx, item.by, px, py, dirX, dirY, planeX, planeY, invDet);
@@ -1752,13 +1751,11 @@
 
         ctx.drawImage(resolved.img, sxSrc, 0, swSrc, imgH, sMinX, drawTop, sW + 0.7, drawH);
       } else {
-        // 圖片尚未載入或未設定時的立體木紋櫃檯備援外觀
         const distShade = Math.max(0.45, 1 - zMid / 40) * item.shade;
         ctx.fillStyle = `rgb(${Math.floor(155 * distShade)},${Math.floor(122 * distShade)},${Math.floor(88 * distShade)})`;
         ctx.fillRect(sMinX, drawTop, sW + 0.7, drawH);
       }
 
-      // 側向面與距離微幅陰影，強化 3D 立體感
       const darkness = Math.min(0.45, (1 - item.shade) + zMid / 90);
       if (darkness > 0.02) {
         ctx.fillStyle = `rgba(0, 0, 0, ${darkness.toFixed(3)})`;
@@ -1767,7 +1764,6 @@
     }
 
     if (anyDrawn) {
-      // 畫出櫃檯輪廓細邊線，讓相鄰櫃檯接縫清晰俐落
       const unitHA = H / cA.tz;
       const unitHB = H / cB.tz;
       const fA = halfH + unitHA * 0.45;
@@ -1788,6 +1784,7 @@
       ctx.restore();
 
       renderedHitboxes3D.push({
+        isNpc: false,
         left: hitLeft,
         right: hitRight,
         top: hitTop,
@@ -1951,43 +1948,82 @@
   }
 
   // =========================================================
-  // 8. 互動邏輯（隔櫃穿透偵測 + POS 機前服務連動）
+  // 8. 互動邏輯（加長 4.0 格偵測距離＋隔櫃穿透鎖定後方貓咪）
   // =========================================================
+  function findNpcBehindCounter(counterObj) {
+    if (!counterObj) return null;
+    const b = getObjectBounds(counterObj);
+    // 依據櫃檯朝向推算後方 1～2 格位置（0:南->北側, 1:東->西側, 2:北->南側, 3:西->東側）
+    const backOffsets = [
+      [0, -1],
+      [-1, 0],
+      [0, 1],
+      [1, 0]
+    ];
+    const [bx, by] = backOffsets[counterObj.dir] || [1, 0];
+
+    for (let step = 1; step <= 2; step++) {
+      for (let gx = b.minX; gx <= b.maxX; gx++) {
+        for (let gy = b.minY; gy <= b.maxY; gy++) {
+          const checkX = gx + bx * step;
+          const checkY = gy + by * step;
+          const candidate = getObjectAt(checkX, checkY);
+          if (candidate && candidate.uid !== counterObj.uid) {
+            const cAsset = state.assetsMap.get(candidate.id);
+            if (cAsset && cAsset.Category === "NPC") {
+              return candidate;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   function findTargetObjectAhead() {
     const px = state.player.x;
     const py = state.player.y;
     const cos = Math.cos(state.player.angle);
     const sin = Math.sin(state.player.angle);
 
-    let frontObj = null;
-    for (const d of [0.75, 1.2, 1.55]) {
+    let firstCounter = null;
+    let firstCounterDist = 0;
+
+    // 延伸偵測至 4.0 格，退後看清楚整隻貓時也能直接對話
+    for (let d = 0.55; d <= 4.0; d += 0.35) {
       const gx = Math.floor(px + cos * d);
       const gy = Math.floor(py + sin * d);
+      if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) break;
+      if (state.walls[gy][gx] === 1) break;
+
       const found = getObjectAt(gx, gy);
-      if (found) {
-        frontObj = found;
+      if (!found) continue;
+
+      const fAsset = state.assetsMap.get(found.id);
+      if (fAsset && fAsset.Category === "NPC") {
+        return { obj: firstCounter || found, behindNpc: found };
+      }
+
+      if (!firstCounter) {
+        firstCounter = found;
+        firstCounterDist = d;
+      } else if (found.uid !== firstCounter.uid && d - firstCounterDist > 1.8) {
         break;
       }
     }
 
-    if (!frontObj) return { obj: null, behindNpc: null };
-
-    const frontAsset = state.assetsMap.get(frontObj.id);
-    if (frontAsset && (frontAsset.Category === "Store" || [21, 22, 23].includes(frontObj.id))) {
-      for (const d of [1.8, 2.3, 2.8, 3.3]) {
-        const gx = Math.floor(px + cos * d);
-        const gy = Math.floor(py + sin * d);
-        const behind = getObjectAt(gx, gy);
-        if (behind && behind.uid !== frontObj.uid) {
-          const bAsset = state.assetsMap.get(behind.id);
-          if (bAsset && bAsset.Category === "NPC") {
-            return { obj: frontObj, behindNpc: behind };
-          }
+    if (firstCounter) {
+      const fAsset = state.assetsMap.get(firstCounter.id);
+      if (fAsset && (fAsset.Category === "Store" || [21, 22, 23].includes(firstCounter.id))) {
+        const behindNpc = findNpcBehindCounter(firstCounter);
+        if (behindNpc) {
+          return { obj: firstCounter, behindNpc };
         }
       }
+      return { obj: firstCounter, behindNpc: null };
     }
 
-    return { obj: frontObj, behindNpc: null };
+    return { obj: null, behindNpc: null };
   }
 
   function updateCrosshairTarget() {
@@ -2012,10 +2048,15 @@
       const res = findTargetObjectAhead();
       targetObj = res.obj;
       behindNpc = res.behindNpc;
+    } else {
+      const sAsset = state.assetsMap.get(targetObj.id);
+      if (sAsset && (sAsset.Category === "Store" || [21, 22, 23].includes(targetObj.id))) {
+        behindNpc = findNpcBehindCounter(targetObj);
+      }
     }
 
     if (!targetObj) {
-      showPA("前方沒有可互動的商品或服務人員，請靠近櫃檯再試。");
+      showPA("前方沒有可互動的商品或服務人員，請對準櫃檯或貓咪再試。");
       return;
     }
 
@@ -2092,7 +2133,6 @@
     document.getElementById("quick-box-btn").onclick = openBlindBoxModal;
   }
 
-  // ID 1 金漸層貓（已徹底拿掉「官網商品頁」按鈕與所有外部網站連結）
   function openSkuModal(prefillSku = "") {
     const asset = state.assetsMap.get(1);
     const speech = (asset && asset.Dialog) ? asset.Dialog : "喵～歡迎光臨 HOLA 大墩店！輸入商品 SKU 貨號或品名關鍵字，我立刻幫您查價格與店內庫存！";
@@ -2167,7 +2207,6 @@
     if (prefillSku) runSearch();
   }
 
-  // ID 2 無毛貓：60 天 VIP 盲盒鑄造器
   function openBlindBoxModal() {
     const asset = state.assetsMap.get(2);
     const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造效期 60 天的「HOLA EXCLUSIVE 專屬家具提案盲盒」連結！";
@@ -2487,7 +2526,7 @@
   }
 
   // =========================================================
-  // 11. 2D 裝潢編輯器（密碼 0816 + 五段縮放 + 放置/搬家/旋轉/移除 + 雲端保存）
+  // 11. 2D 裝潢編輯器（密碼 0816 + 五段縮放 + 放置/搬家/旋轉/移除/重設 + 雲端保存）
   // =========================================================
   document.getElementById("admin-unlock-btn").addEventListener("click", () => {
     if (state.adminUnlocked) {
@@ -2537,6 +2576,13 @@
     if (state.movingObj) {
       state.movingObj.dir = state.placeDir;
     }
+  });
+
+  document.getElementById("btn-reset-default").addEventListener("click", () => {
+    if (!confirm("確定要重設為靠南牆縱向櫃檯預設配置嗎？（重設後請按「☁️ 雲端保存」寫入試算表）")) return;
+    buildDefaultHolaMap();
+    state.movingObj = null;
+    showPA("🔄 已重設為最新縱向櫃檯預設配置！請按「☁️ 雲端保存」寫入試算表。");
   });
 
   document.querySelectorAll(".cat-tab").forEach(tab => {
@@ -2747,8 +2793,19 @@
     const cy = (clientY - rect.top) * dpr;
 
     if (state.view === "3d") {
+      // 優先偵測點擊到可見的服務人員（避免櫃檯外框搶走點擊）
       for (let i = renderedHitboxes3D.length - 1; i >= 0; i--) {
         const box = renderedHitboxes3D[i];
+        if (!box.isNpc) continue;
+        if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
+          triggerInteraction(box.obj);
+          return;
+        }
+      }
+      // 其次偵測櫃檯與其他物件（若櫃檯後方站著貓咪也會自動連動對話）
+      for (let i = renderedHitboxes3D.length - 1; i >= 0; i--) {
+        const box = renderedHitboxes3D[i];
+        if (box.isNpc) continue;
         if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
           triggerInteraction(box.obj);
           return;
@@ -2929,8 +2986,8 @@
         g.browseTime -= dt;
         if (g.browseTime <= 0) {
           const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
-          let targetX = 35;
-          let targetY = 27;
+          let targetX = 32;
+          let targetY = 35;
           if (posCounters.length > 0) {
             const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
             const b = getObjectBounds(chosen);
