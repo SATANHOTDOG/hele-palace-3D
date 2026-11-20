@@ -121,7 +121,7 @@
       color: #fff;
     }
 
-    /* 特價商品跑馬燈（取代簽筒） */
+    /* 特價商品跑馬燈 */
     #promo-marquee {
       background: rgba(15, 18, 22, 0.9);
       border: 1px solid rgba(245, 185, 66, 0.35);
@@ -176,7 +176,7 @@
       100% { transform: translateX(-100%); }
     }
 
-    /* ================= 主視窗區（3D 畫面 / 2D 地圖） ================= */
+    /* ================= 主視窗區 ================= */
     #viewport-wrap {
       flex: 1 1 auto;
       position: relative;
@@ -192,7 +192,6 @@
       image-rendering: pixelated;
     }
 
-    /* 3D 準心 */
     #crosshair {
       position: absolute;
       top: 48%;
@@ -212,7 +211,6 @@
     #crosshair::before { top: 8px; left: 0; width: 18px; height: 2px; }
     #crosshair::after { left: 8px; top: 0; width: 2px; height: 18px; }
 
-    /* 賣場廣播浮動條 */
     #pa-banner {
       position: absolute;
       top: 10px;
@@ -315,7 +313,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     }
 
-    /* ================= 2D 視野縮放與創造裝潢工具列 ================= */
+    /* 2D 縮放與裝潢工具列 */
     #zoom-bar-2d {
       position: absolute;
       top: 10px;
@@ -360,7 +358,6 @@
     }
     #admin-unlock-btn.show { display: inline-flex; align-items: center; gap: 4px; }
 
-    /* 2D 創造編輯抽屜 */
     #builder-panel {
       position: absolute;
       left: 0;
@@ -467,7 +464,7 @@
       text-overflow: ellipsis;
     }
 
-    /* ================= 底部 DOOM 風格狀態列（修正不截斷比例） ================= */
+    /* ================= 底部 DOOM 風格狀態列 ================= */
     #doom-hud {
       flex: 0 0 64px;
       background: linear-gradient(180deg, #232730 0%, #15181e 100%);
@@ -532,24 +529,24 @@
       object-fit: contain;
     }
 
-    /* ================= 彈出互動視窗（SKU查詢 / 盲盒 / 對話） ================= */
+    /* ================= 彈出互動視窗 ================= */
     #modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.72);
+      background: rgba(0, 0, 0, 0.78);
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 14px;
       z-index: 50;
-      backdrop-filter: blur(3px);
+      backdrop-filter: blur(4px);
     }
     #modal-backdrop.show { display: flex; }
 
     .modal-card {
       width: 100%;
       max-width: 420px;
-      max-height: 84dvh;
+      max-height: 88dvh;
       background: #1b2028;
       border: 1.5px solid var(--gold-dim);
       border-radius: 14px;
@@ -560,7 +557,7 @@
     }
 
     .modal-header {
-      padding: 12px 14px;
+      padding: 11px 14px;
       background: #232934;
       border-bottom: 1px solid var(--panel-border);
       display: flex;
@@ -570,7 +567,7 @@
     }
 
     .modal-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       color: var(--gold);
       display: flex;
@@ -629,6 +626,7 @@
       border-radius: 8px;
       font-size: 14px;
       outline: none;
+      user-select: text;
     }
     .input-group input:focus { border-color: var(--gold); }
 
@@ -642,6 +640,7 @@
       border-radius: 8px;
       cursor: pointer;
       white-space: nowrap;
+      text-align: center;
     }
     .btn-action.secondary {
       background: #2b323e;
@@ -649,6 +648,7 @@
     }
     .btn-action.line {
       background: #06c755;
+      color: #fff;
       width: 100%;
       margin-top: 8px;
       display: flex;
@@ -656,6 +656,10 @@
       justify-content: center;
       gap: 6px;
       text-decoration: none;
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
     }
 
     .sku-result-box {
@@ -671,16 +675,132 @@
       padding: 4px 0;
       border-bottom: 1px dashed #28303d;
       font-size: 13px;
+      gap: 8px;
     }
     .sku-row:last-child { border-bottom: none; }
 
-    .blindbox-gift {
+    /* ================= HOLA EXCLUSIVE 專屬提案盲盒卡片（圖三還原） ================= */
+    .exclusive-proposal-card {
+      background: #ffffff;
+      color: #111827;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      border: 1px solid #e5e7eb;
+    }
+
+    .exclusive-banner {
+      background: linear-gradient(135deg, #1e3a8a 0%, #7e22ce 50%, #ea580c 100%);
+      color: #ffffff;
       text-align: center;
-      padding: 16px 10px;
-      background: radial-gradient(circle, rgba(245, 185, 66, 0.18), transparent 70%);
+      padding: 18px 14px;
+    }
+    .exclusive-banner .brand-en {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2.5px;
+      margin: 0;
+    }
+    .exclusive-banner .brand-zh {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.92;
+      margin-top: 4px;
+    }
+
+    .exclusive-body {
+      padding: 16px 14px;
+      text-align: center;
+    }
+
+    .exclusive-sku {
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      letter-spacing: 0.5px;
+    }
+
+    .exclusive-name {
+      font-size: 17px;
+      font-weight: 900;
+      color: #111827;
+      line-height: 1.4;
+      margin: 6px 0 12px;
+    }
+
+    .exclusive-price-box {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 10px;
+      margin-bottom: 10px;
+    }
+    .exclusive-price-box .lbl {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4b5563;
+    }
+    .exclusive-price-box .val {
+      font-size: 28px;
+      font-weight: 900;
+      color: #dc2626;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .exclusive-stock-pill {
+      background: #fef9c3;
+      border: 1px solid #fde047;
+      color: #854d0e;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 7px 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .exclusive-note-box {
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      color: #78350f;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 6px;
+      text-align: left;
+      margin-bottom: 10px;
+    }
+
+    .exclusive-fineprint {
+      font-size: 11px;
+      color: #6b7280;
+      text-align: left;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .exclusive-advisor {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.55;
+      font-weight: 700;
+    }
+
+    .exclusive-subhint {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+
+    .blindbox-unbox-stage {
+      text-align: center;
+      padding: 20px 12px;
+      background: radial-gradient(circle, rgba(245, 185, 66, 0.2), transparent 72%);
       border: 1.5px dashed var(--gold);
       border-radius: 12px;
-      margin-top: 8px;
     }
   </style>
 </head>
@@ -698,7 +818,7 @@
         <button id="btn-toggle-view" class="btn-top">🗺️ 2D地圖</button>
       </div>
     </div>
-    <!-- 特價商品跑馬燈（取代簽筒） -->
+    <!-- 特價商品跑馬燈 -->
     <div id="promo-marquee" title="點擊查看特價商品詳情">
       <div class="marquee-tag">🔥 特價快報</div>
       <div class="marquee-track">
@@ -760,15 +880,15 @@
     </div>
   </main>
 
-  <!-- 底部 DOOM 狀態列（比例優化不截斷） -->
+  <!-- 底部 DOOM 狀態列 -->
   <footer id="doom-hud">
     <div class="hud-box">
       <span class="hud-label" id="hud-lbl-1">展間模式</span>
       <span class="hud-val" id="hud-val-1">自由巡店</span>
     </div>
     <div class="hud-box">
-      <span class="hud-label" id="hud-lbl-2">店內 / 排隊</span>
-      <span class="hud-val cyan" id="hud-val-2">導覽中</span>
+      <span class="hud-label" id="hud-lbl-2">櫃檯服務</span>
+      <span class="hud-val cyan" id="hud-val-2">查詢 / 盲盒</span>
     </div>
     <div class="hud-avatar-box">
       <img id="hud-kobe-img" src="./Kobe.png" alt="Kobe" />
@@ -797,15 +917,12 @@
   // 1. 系統設定與試算表連線
   // =========================================================
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxYlSNUXb_Lu2mslqN6TAwYUeSVyIfOpO8akA_kpsIbXgA3AAMe6iOc4M__o8XeA_nrag/exec";
-  const SHEET_ID = "1Gbm50IPslGBT_utfHvxir-ZMCFdWCcXreXlrqlenpx8";
-  const PRODUCTS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
-  const ASSETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("和樂宮3D素材")}`;
-  const LINE_CONSULT_URL = "https://line.me/ti/p/~"; // 可依需求替換專屬 LINE 連結
+  const KOBE_LINE_ID = "satanhotdog";
+  const LINE_CONSULT_URL = `https://line.me/ti/p/~${KOBE_LINE_ID}`;
 
   const MAP_SIZE = 40;
   const LOCAL_MAP_KEY = "hola_dadun_3d_map_v1";
 
-  // 預設核心素材（試算表載入前立即生效，載入後自動以試算表數值覆蓋）
   const DEFAULT_ASSETS = [
     { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
     { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
@@ -820,7 +937,7 @@
   // =========================================================
   const state = {
     view: "3d", // "3d" | "2d"
-    mode: "browse", // "browse" (預設3D逛逛) | "game" (遊戲模式)
+    mode: "browse", // "browse" | "game"
     adminUnlocked: false,
     editorTool: "place", // "place" | "move" | "erase"
     editorCat: "NPC",
@@ -828,41 +945,35 @@
     placeDir: 0, // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
     movingObj: null,
 
-    // 素材字典 & 商品庫
     assetsMap: new Map(),
     assetsList: [],
-    products: [],
     promoProducts: [],
     currentMarqueeItem: null,
+    skuCache: new Map(),
 
-    // 地圖資料：walls[y][x] (0=空地, 1=外牆), objects: [{ uid, id, x, y, dir }]
     walls: Array.from({ length: MAP_SIZE }, () => Array(MAP_SIZE).fill(0)),
     objects: [],
 
-    // 玩家 (Kobe ID 3) 狀態：出發點設在大門內走道中央，面朝北(-PI/2)望向賣場與右側大櫃檯
     player: {
       x: 20.5,
       y: 34.5,
       angle: -Math.PI / 2,
-      dir2d: 2, // 0:下, 1:右, 2:上, 3:左
+      dir2d: 2,
       path: []
     },
 
-    // 2D 鏡頭縮放與平移
     cam2d: {
       visibleTiles: 40,
       centerX: 20,
       centerY: 20
     },
 
-    // 遊戲模式狀態
     game: {
       revenue: 0,
       guests: [],
       spawnTimer: 0
     },
 
-    // 輸入控制
     keys: { fwd: false, back: false, strafeL: false, strafeR: false, turnL: false, turnR: false },
     lastTime: performance.now()
   };
@@ -879,12 +990,10 @@
       const entry = imageCache.get(key);
       if (entry.status === "loaded") return { img: entry.img, flipX: false };
       if (entry.status === "error") {
-        // 若 _270 缺圖，自動水平鏡像 _90 補上
         if (angleSuffix === "_270" && allowMirrorFallback) {
           const alt = getSpriteImage(baseFile, "_90", false);
           if (alt) return { img: alt.img, flipX: true };
         }
-        // 其他角度缺圖則退回正面基準圖
         if (angleSuffix !== "") {
           return getSpriteImage(baseFile, "", false);
         }
@@ -912,15 +1021,13 @@
 
   function resolveAssetSprite(asset, relAngleRad, timeSec) {
     if (!asset || !asset.File) return null;
-    // 支援多圖輪播 (例: img1|img2|img3)
     const files = String(asset.File).split("|").map(s => s.trim()).filter(Boolean);
     const fps = parseFloat(asset.FPS) || 1;
     const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
     const baseFile = files[frameIdx];
 
-    // 依相對視角決定 0 / 90 / 180 / 270
     let suffix = "";
-    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360; // 0..360
+    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360;
     if (deg >= 45 && deg < 135) {
       suffix = "_90";
     } else if (deg >= 135 && deg < 225) {
@@ -944,10 +1051,9 @@
   }
 
   // =========================================================
-  // 4. 建立 40×40 預設大墩店地圖（含右側ㄇ字型櫃檯與雙通道）
+  // 4. 建立 40×40 預設大墩店地圖
   // =========================================================
   function buildDefaultHolaMap() {
-    // 重置外牆（大門開口在下方 y=39, x=18..21）
     for (let y = 0; y < MAP_SIZE; y++) {
       for (let x = 0; x < MAP_SIZE; x++) {
         const isBorder = (x === 0 || x === MAP_SIZE - 1 || y === 0 || y === MAP_SIZE - 1);
@@ -956,10 +1062,6 @@
       }
     }
 
-    // 右側ㄇ字型櫃檯配置：
-    // 右牆在 x=39；x=37、38 保留兩格寬走道讓 Kobe 從店員身後走過；
-    // x=36 站店員；x=35 為前排櫃檯（面朝左 dir=3 迎向賣場）；
-    // y=21..23 留空為櫃檯北側入口，Kobe 可自由走進櫃檯內部！
     let uidCounter = 1;
     const place = (id, x, y, dir) => {
       state.objects.push({ uid: uidCounter++, id, x, y, dir });
@@ -967,27 +1069,26 @@
 
     state.objects = [];
 
-    // ㄇ字型上翼橫向延伸櫃檯 (y=20)
+    // ㄇ字型上翼橫向延伸櫃檯
     place(21, 35, 20, 0);
     place(21, 37, 20, 0);
 
-    // ㄇ字型前排直向主櫃檯 (x=35, dir=3 面朝左/西, 每座 W=2,H=1 轉向後佔 1×2 格)
-    place(21, 35, 24, 3); // 服務台延伸櫃台（前方對應 1號金漸層貓）
-    place(21, 35, 26, 3); // 服務台延伸櫃台（前方對應 2號無毛貓）
-    place(22, 35, 28, 3); // POS收銀櫃檯 1
-    place(23, 35, 30, 3); // POS收銀櫃檯 2
-    place(21, 35, 32, 3); // 服務台延伸櫃台
+    // ㄇ字型前排直向主櫃檯
+    place(21, 35, 24, 3);
+    place(21, 35, 26, 3);
+    place(22, 35, 28, 3);
+    place(23, 35, 30, 3);
+    place(21, 35, 32, 3);
 
-    // ㄇ字型下翼橫向延伸櫃檯 (y=34)
+    // ㄇ字型下翼橫向延伸櫃檯
     place(21, 35, 34, 2);
     place(21, 37, 34, 2);
 
-    // 櫃檯內側服務人員 (x=36, dir=3 面朝左/西望向賣場, 身後 x=37,38 為兩格寬通道)
+    // 櫃檯內側服務人員
     place(1, 36, 24, 3); // 1號：金漸層貓服務人員（SKU查詢）
     place(2, 36, 26, 3); // 2號：無毛貓服務人員（VIP盲盒）
   }
 
-  // 地圖編碼與解碼（相容雲端地圖配置3D）
   function encodeMapData() {
     return JSON.stringify({
       v: 1,
@@ -1001,10 +1102,10 @@
     try {
       const parsed = JSON.parse(codeStr);
       if (parsed && Array.isArray(parsed.objs)) {
-        buildDefaultHolaMap(); // 先建好外牆
+        buildDefaultHolaMap();
         let uid = 1;
         state.objects = parsed.objs
-          .filter(arr => Array.isArray(arr) && arr.length >= 4 && arr[0] !== 3) // 排除 ID 3 主角重複放置
+          .filter(arr => Array.isArray(arr) && arr.length >= 4 && arr[0] !== 3)
           .map(arr => ({
             uid: uid++,
             id: Number(arr[0]),
@@ -1015,12 +1116,11 @@
         return true;
       }
     } catch (e) {
-      console.warn("地圖解碼失敗，使用預設大墩店配置", e);
+      console.warn("地圖解碼失敗，使用預設配置", e);
     }
     return false;
   }
 
-  // 計算物件在網格上的實際佔地矩形 (考慮方向旋轉)
   function getObjectBounds(obj) {
     const asset = state.assetsMap.get(obj.id) || { W: 1, H: 1 };
     const w = Math.max(1, parseInt(asset.W) || 1);
@@ -1059,7 +1159,7 @@
   }
 
   // =========================================================
-  // 5. 載入試算表資料（和樂宮3D素材、地圖配置3D、商品全資料）
+  // 5. 載入試算表資料（透過 GAS 後端直連，解決查詢卡住問題）
   // =========================================================
   function registerAssets(list) {
     state.assetsMap.clear();
@@ -1083,7 +1183,6 @@
         FPS: parseFloat(raw.FPS) || 1
       };
       state.assetsMap.set(id, item);
-      // ID 3 為主角 Kobe 本人，不列入地圖擺設圖鑑
       if (id !== 3) {
         state.assetsList.push(item);
       }
@@ -1092,35 +1191,18 @@
     renderPalette();
   }
 
-  function parseCSV(text) {
-    const rows = [];
-    let row = [];
-    let cur = "";
-    let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      const next = text[i + 1];
-      if (inQuotes) {
-        if (ch === '"' && next === '"') { cur += '"'; i++; }
-        else if (ch === '"') { inQuotes = false; }
-        else { cur += ch; }
-      } else {
-        if (ch === '"') { inQuotes = true; }
-        else if (ch === ",") { row.push(cur); cur = ""; }
-        else if (ch === "\n" || (ch === "\r" && next === "\n")) {
-          if (ch === "\r") i++;
-          row.push(cur);
-          rows.push(row);
-          row = [];
-          cur = "";
-        } else { cur += ch; }
-      }
+  async function queryProductsFromGAS(q) {
+    const key = q.trim().toLowerCase();
+    if (state.skuCache.has(key)) {
+      return state.skuCache.get(key);
     }
-    if (cur.length > 0 || row.length > 0) {
-      row.push(cur);
-      rows.push(row);
+    const res = await fetch(`${GAS_URL}?action=searchSku&q=${encodeURIComponent(q.trim())}`);
+    const json = await res.json();
+    if (json && json.ok && Array.isArray(json.items)) {
+      state.skuCache.set(key, json.items);
+      return json.items;
     }
-    return rows;
+    return [];
   }
 
   async function initDataPipeline() {
@@ -1133,7 +1215,6 @@
       const json = await res.json();
       if (json && json.ok) {
         if (Array.isArray(json.assets) && json.assets.length > 0) {
-          // 合併預設與試算表素材
           const merged = new Map(DEFAULT_ASSETS.map(a => [a.ID, a]));
           json.assets.forEach(a => {
             const id = parseInt(a.ID);
@@ -1150,24 +1231,8 @@
         }
       }
     } catch (err) {
-      console.warn("GAS 連線備援中，改讀公開 CSV 與本機快取", err);
       const localCode = localStorage.getItem(LOCAL_MAP_KEY);
       if (localCode) decodeMapData(localCode);
-      // 備援讀取公開 CSV
-      try {
-        const csvRes = await fetch(ASSETS_CSV_URL);
-        const csvText = await csvRes.text();
-        const rows = parseCSV(csvText);
-        if (rows.length > 1) {
-          const headers = rows[0].map(h => h.trim());
-          const list = rows.slice(1).map(r => {
-            const obj = {};
-            headers.forEach((h, idx) => { obj[h] = r[idx] || ""; });
-            return obj;
-          });
-          registerAssets(list);
-        }
-      } catch (_) {}
     }
 
     // 2. 訪客流量統計 (+1)
@@ -1178,72 +1243,48 @@
       }
     } catch (_) {}
 
-    // 3. 讀取【商品全資料】供金漸層貓查詢、無毛貓盲盒與頂部特價跑馬燈
-    loadProductsCSV();
+    // 3. 讀取頂部跑馬燈促銷商品
+    loadPromoMarquee();
   }
 
-  async function loadProductsCSV() {
+  async function loadPromoMarquee() {
     try {
-      const res = await fetch(PRODUCTS_CSV_URL);
-      const text = await res.text();
-      const rows = parseCSV(text);
-      if (rows.length < 2) return;
-      const headers = rows[0].map(h => h.trim());
-      const findCol = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-
-      const cSku = findCol(["SKU", "貨號"]);
-      const cName = findCol(["品名", "商品名稱", "名稱"]);
-      const cPrice = findCol(["售價", "原價", "市價"]);
-      const cPromoPrice = findCol(["特價", "促銷價", "優惠價"]);
-      const cPromoTag = findCol(["促銷", "檔期", "活動"]);
-      const cStock630 = findCol(["HOLA630庫存", "大墩庫存", "庫存"]);
-      const cShow630 = findCol(["HOLA630展示", "展示"]);
-      const cStockYM = findCol(["楊梅庫存", "總倉"]);
-
-      const items = [];
-      for (let i = 1; i < rows.length; i++) {
-        const r = rows[i];
-        const sku = String(r[cSku] || "").trim();
-        const name = String(r[cName] || "").trim();
-        if (!sku && !name) continue;
-        items.push({
-          sku,
-          name: name || `商品 ${sku}`,
-          price: String(r[cPrice] || "").trim(),
-          promoPrice: String(r[cPromoPrice] || "").trim(),
-          promoTag: String(r[cPromoTag] || "").trim(),
-          stock630: String(r[cStock630] || "0").trim(),
-          show630: String(r[cShow630] || "0").trim(),
-          stockYM: String(r[cStockYM] || "0").trim()
-        });
+      const res = await fetch(`${GAS_URL}?action=getPromos`);
+      const json = await res.json();
+      if (json && json.ok && Array.isArray(json.items) && json.items.length > 0) {
+        state.promoProducts = json.items;
+        rotateMarqueeItem();
+        return;
       }
+    } catch (_) {}
+    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
+  }
 
-      state.products = items;
-      // 篩選有特價或促銷標記的商品給跑馬燈輪播
-      const promos = items.filter(p => (p.promoPrice && p.promoPrice !== p.price) || p.promoTag);
-      state.promoProducts = promos.length > 0 ? promos : items.slice(0, 30);
-      rotateMarqueeItem();
-    } catch (err) {
-      document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
-    }
+  function formatPriceDisplay(val) {
+    if (!val) return "";
+    const num = Number(String(val).replace(/[^0-9.-]/g, ""));
+    if (!isNaN(num) && num > 0) return `$${num.toLocaleString()}`;
+    return String(val).startsWith("$") ? val : `$${val}`;
   }
 
   function rotateMarqueeItem() {
     if (!state.promoProducts.length) return;
     const item = state.promoProducts[Math.floor(Math.random() * state.promoProducts.length)];
     state.currentMarqueeItem = item;
-    const priceStr = item.promoPrice ? `特價 $${item.promoPrice}` : (item.price ? `$${item.price}` : "門市優惠中");
+    const priceStr = item.promoPrice
+      ? `特價 ${formatPriceDisplay(item.promoPrice)}`
+      : (item.price ? formatPriceDisplay(item.price) : "門市優惠中");
     const tagStr = item.promoTag ? `【${item.promoTag}】` : "【精選推薦】";
     const el = document.getElementById("marquee-text");
     el.style.animation = "none";
-    el.offsetHeight; // 觸發重繪重啟跑馬燈
-    el.textContent = `${tagStr} ${item.name}（SKU: ${item.sku}）— ${priceStr} ｜ 大墩庫存:${item.stock630} / 展示:${item.show630}（點擊查看詳情）`;
+    el.offsetHeight;
+    el.textContent = `${tagStr} ${item.name}（SKU: ${item.sku}）— ${priceStr} ｜ 大墩庫存:${item.stock630 || 0} / 展示:${item.show630 || 0}（點擊查詢詳情）`;
     el.style.animation = "marqueeScroll 20s linear infinite";
   }
   setInterval(rotateMarqueeItem, 20000);
 
   // =========================================================
-  // 6. 3D 射線投射引擎 (Raycaster + 4向精靈圖渲染)
+  // 6. 3D 射線投射引擎
   // =========================================================
   const canvas = document.getElementById("main-canvas");
   const ctx = canvas.getContext("2d");
@@ -1268,7 +1309,6 @@
     const H = canvas.height;
     const halfH = H * 0.5;
 
-    // 1. 繪製 HOLA 賣場挑高天花板（工業風深灰＋軌道燈光暈）與水磨石地板
     const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
     ceilGrad.addColorStop(0, "#14171d");
     ceilGrad.addColorStop(1, "#262b35");
@@ -1282,9 +1322,8 @@
     ctx.fillStyle = floorGrad;
     ctx.fillRect(0, halfH, W, halfH);
 
-    // 2. 射線投射繪製 40×40 賣場牆面
-    const fov = Math.PI / 3; // 60度視角
-    const numRays = Math.min(W, 480); // 兼顧手機流暢度與畫質
+    const fov = Math.PI / 3;
+    const numRays = Math.min(W, 480);
     const stripW = W / numRays;
     const zBuffer = new Float32Array(numRays);
 
@@ -1348,7 +1387,6 @@
       const lineH = H / safeDist;
       const drawStart = halfH - lineH * 0.55;
 
-      // HOLA 暖米白牆面 + 距離霧化陰影
       const shade = Math.max(0.28, 1 - safeDist / 42) * (side === 1 ? 0.85 : 1);
       const r = Math.floor(228 * shade);
       const g = Math.floor(220 * shade);
@@ -1356,12 +1394,10 @@
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(i * stripW, drawStart, stripW + 0.8, lineH);
 
-      // 牆面木質踢腳線
       ctx.fillStyle = `rgb(${Math.floor(110 * shade)},${Math.floor(92 * shade)},${Math.floor(76 * shade)})`;
       ctx.fillRect(i * stripW, drawStart + lineH * 0.92, stripW + 0.8, lineH * 0.08);
     }
 
-    // 3. 收集所有 3D 精靈圖（家具/櫃檯/NPC + 遊戲模式顧客）並由遠而近排序
     const renderList = [];
 
     state.objects.forEach(obj => {
@@ -1373,14 +1409,11 @@
       const dist = Math.hypot(dx, dy);
       if (dist < 0.25 || dist > 45) return;
 
-      // 計算攝影機相對於物件正面的角度（決定顯示 0 / 90 / 180 / 270）
-      // 物件朝向: 0=南(+Y, PI/2), 1=東(+X, 0), 2=北(-Y, -PI/2), 3=西(-X, PI)
       const facingAngles = [Math.PI / 2, 0, -Math.PI / 2, Math.PI];
       const objFacing = facingAngles[obj.dir] ?? (Math.PI / 2);
       const vecToCam = Math.atan2(py - bounds.centerY, px - bounds.centerX);
       const relAngle = normalizeAngle(vecToCam - objFacing);
 
-      // 判斷目前是正面/背面(使用 W 寬度) 還是側面(使用 H 厚度)
       const deg = ((relAngle * 180 / Math.PI) % 360 + 360) % 360;
       const isSideView = (deg >= 45 && deg < 135) || (deg >= 225 && deg < 315);
       const worldWidth = isSideView ? asset.H : asset.W;
@@ -1398,7 +1431,6 @@
       });
     });
 
-    // 遊戲模式下的 AI 顧客
     if (state.mode === "game") {
       state.game.guests.forEach(g => {
         const dx = g.x - px;
@@ -1439,14 +1471,13 @@
 
       const spriteScreenX = (W / 2) * (1 + transformX / transformY);
       const baseUnitH = Math.abs(H / transformY);
-      const floorY = halfH + baseUnitH * 0.45; // 地板對齊基準線
+      const floorY = halfH + baseUnitH * 0.45;
 
       if (item.type === "obj") {
         const resolved = resolveAssetSprite(item.asset, item.relAngle, timeSec);
         const drawH = baseUnitH * item.scaleH;
         let drawW = baseUnitH * item.worldWidth;
 
-        // 若有載入實際圖片且為 1x1 物件，保持原圖長寬比不變形；若 W>1 則依 worldWidth 展開貼齊櫃檯
         if (resolved && resolved.img && item.asset.W === 1 && item.asset.H === 1) {
           const aspect = resolved.img.width / Math.max(1, resolved.img.height);
           drawW = drawH * aspect;
@@ -1455,7 +1486,6 @@
         const leftX = spriteScreenX - drawW / 2;
         const topY = floorY - drawH;
 
-        // 簡易 Z-buffer 遮擋檢查（取中心與左右採樣點）
         const sampleRays = [spriteScreenX, leftX + drawW * 0.2, leftX + drawW * 0.8]
           .map(sx => Math.floor((sx / W) * numRays))
           .filter(idx => idx >= 0 && idx < numRays);
@@ -1473,7 +1503,6 @@
           }
           ctx.restore();
         } else {
-          // 圖片尚未上傳時的清晰佔位標牌（標示編號與名稱）
           ctx.fillStyle = item.asset.Category === "NPC" ? "#f59e0b" : "#8d6e63";
           ctx.fillRect(leftX, topY, drawW, drawH);
           ctx.strokeStyle = "#fff";
@@ -1485,7 +1514,6 @@
           ctx.fillText(`#${item.asset.ID} ${item.asset.Name}`, spriteScreenX, topY + drawH * 0.52);
         }
 
-        // 紀錄螢幕可點擊區（支援 3D 畫面直接點貓咪或家具互動）
         renderedHitboxes3D.push({
           left: leftX,
           right: leftX + drawW,
@@ -1494,7 +1522,6 @@
           obj: item.obj
         });
       } else if (item.type === "guest") {
-        // 遊戲模式顧客立繪（矢量像素風格顧客）
         const drawH = baseUnitH * 0.9;
         const drawW = drawH * 0.55;
         const leftX = spriteScreenX - drawW / 2;
@@ -1513,17 +1540,13 @@
 
   function drawPixelGuest3D(ctx, x, y, w, h, guest) {
     ctx.save();
-    // 身體
     ctx.fillStyle = guest.color;
     ctx.fillRect(x + w * 0.2, y + h * 0.35, w * 0.6, h * 0.45);
-    // 頭部
     ctx.fillStyle = "#fde68a";
     ctx.fillRect(x + w * 0.25, y + h * 0.08, w * 0.5, h * 0.27);
-    // 腿部
     ctx.fillStyle = "#1e293b";
     ctx.fillRect(x + w * 0.25, y + h * 0.8, w * 0.2, h * 0.2);
     ctx.fillRect(x + w * 0.55, y + h * 0.8, w * 0.2, h * 0.2);
-    // 狀態氣泡
     ctx.fillStyle = "rgba(0,0,0,0.75)";
     ctx.fillRect(x, y - 22, w, 18);
     ctx.fillStyle = "#fff";
@@ -1534,7 +1557,7 @@
   }
 
   // =========================================================
-  // 7. 2D 平面地圖渲染（五段視野縮放 + 手勢縮放平移 + 建造格線）
+  // 7. 2D 平面地圖渲染
   // =========================================================
   function get2DTransform() {
     const W = canvas.width;
@@ -1546,7 +1569,7 @@
     return { tilePx, offsetX, offsetY };
   }
 
-  function render2D(timeSec) {
+  function render2D() {
     const W = canvas.width;
     const H = canvas.height;
     ctx.fillStyle = "#11141a";
@@ -1554,7 +1577,6 @@
 
     const { tilePx, offsetX, offsetY } = get2DTransform();
 
-    // 繪製地板與網格線
     for (let y = 0; y < MAP_SIZE; y++) {
       for (let x = 0; x < MAP_SIZE; x++) {
         const sx = offsetX + x * tilePx;
@@ -1576,13 +1598,11 @@
       }
     }
 
-    // 標示大門入口
     const doorX = offsetX + 18 * tilePx;
     const doorY = offsetY + 39 * tilePx;
     ctx.fillStyle = "rgba(34, 197, 94, 0.35)";
     ctx.fillRect(doorX, doorY, 4 * tilePx, tilePx);
 
-    // 繪製已放置的家具 / 櫃檯 / NPC
     state.objects.forEach(obj => {
       const asset = state.assetsMap.get(obj.id);
       if (!asset) return;
@@ -1592,14 +1612,12 @@
       const sw = b.spanX * tilePx;
       const sh = b.spanY * tilePx;
 
-      // 底座框線
       ctx.fillStyle = asset.Category === "NPC" ? "rgba(245, 158, 11, 0.25)" : "rgba(56, 189, 248, 0.22)";
       ctx.fillRect(sx + 1, sy + 1, sw - 2, sh - 2);
       ctx.strokeStyle = (state.movingObj && state.movingObj.uid === obj.uid) ? "#ef4444" : "rgba(15, 23, 42, 0.45)";
       ctx.lineWidth = 1.5;
       ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
 
-      // 依物件方向取得對應角度貼圖
       const suffixes = ["", "_90", "_180", "_270"];
       const baseFile = String(asset.File || "").split("|")[0].trim();
       const spr = getSpriteImage(baseFile, suffixes[obj.dir] || "", true);
@@ -1620,7 +1638,6 @@
         ctx.fillText(`#${asset.ID}`, sx + sw / 2, sy + sh / 2 + 3);
       }
 
-      // 方向指示小箭頭
       if (tilePx >= 16) {
         const arrows = ["↓", "→", "↑", "←"];
         ctx.fillStyle = "#dc2626";
@@ -1629,7 +1646,6 @@
       }
     });
 
-    // 繪製遊戲模式 AI 顧客
     if (state.mode === "game") {
       state.game.guests.forEach(g => {
         const gx = offsetX + g.x * tilePx;
@@ -1643,7 +1659,6 @@
       });
     }
 
-    // 繪製主角 Kobe (ID 3)
     const kx = offsetX + state.player.x * tilePx;
     const ky = offsetY + state.player.y * tilePx;
     const kSize = Math.max(16, tilePx * 1.15);
@@ -1666,7 +1681,6 @@
       ctx.fill();
     }
 
-    // 視線方向指示線
     ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1676,7 +1690,7 @@
   }
 
   // =========================================================
-  // 8. 互動邏輯（隔櫃穿透偵測 + POS 機前服務連動 + SKU 查詢 + VIP 盲盒）
+  // 8. 互動邏輯（隔櫃穿透偵測 + POS 機前服務連動 + SKU 查詢 + VIP 盲盒提案卡）
   // =========================================================
   function findTargetObjectAhead() {
     const px = state.player.x;
@@ -1684,7 +1698,6 @@
     const cos = Math.cos(state.player.angle);
     const sin = Math.sin(state.player.angle);
 
-    // 1. 先掃描前方 0.6 ~ 1.6 格內最近物件
     let frontObj = null;
     for (const d of [0.75, 1.2, 1.55]) {
       const gx = Math.floor(px + cos * d);
@@ -1698,7 +1711,6 @@
 
     if (!frontObj) return { obj: null, behindNpc: null };
 
-    // 2. 若前方是櫃檯 (ID 21 服務台 / ID 22, 23 POS收銀台)，啟動「隔櫃穿透」往後延伸 2 格偵測貓咪店員
     const frontAsset = state.assetsMap.get(frontObj.id);
     if (frontAsset && (frontAsset.Category === "Store" || [21, 22, 23].includes(frontObj.id))) {
       for (const d of [1.8, 2.3, 2.8]) {
@@ -1746,27 +1758,22 @@
       return;
     }
 
-    // 若隔著櫃檯瞄準到金漸層貓(1)或無毛貓(2)，優先與貓咪店員互動
     const effectiveObj = behindNpc || targetObj;
     const asset = state.assetsMap.get(effectiveObj.id);
     if (!asset) return;
 
-    // 1號：金漸層貓服務人員 -> SKU 價格與庫存查詢
     if (asset.ID === 1) {
       openSkuModal();
       return;
     }
 
-    // 2號：無毛貓服務人員 -> 60 天 VIP 盲盒
     if (asset.ID === 2) {
       openBlindBoxModal();
       return;
     }
 
-    // 22 / 23 號：POS 收銀櫃檯
     if (asset.ID === 22 || asset.ID === 23) {
       if (state.mode === "game") {
-        // 遊戲模式：結帳排隊顧客
         const qIdx = state.game.guests.findIndex(g => g.state === "queue");
         if (qIdx !== -1) {
           const served = state.game.guests.splice(qIdx, 1)[0];
@@ -1778,24 +1785,21 @@
           showPA("目前 POS 櫃檯沒有排隊結帳的顧客。");
         }
       } else {
-        // 非遊戲（3D逛逛）模式：站在 POS 櫃檯前也能直接呼叫兩隻貓咪服務！
         openCounterConciergeModal(asset.Name);
       }
       return;
     }
 
-    // 21 號：服務台延伸櫃檯（若該格正後方沒站貓，同樣提供櫃檯服務選單）
     if (asset.ID === 21) {
       openCounterConciergeModal(asset.Name);
       return;
     }
 
-    // 其他家具 / NPC / 賣場陳列通用對話
     openGenericAssetModal(asset);
   }
 
   // =========================================================
-  // 9. 互動視窗內容（SKU 查詢 / VIP 盲盒 / 櫃檯服務 / 跑馬燈商品）
+  // 9. 互動視窗內容
   // =========================================================
   function openModal(title, html) {
     document.getElementById("modal-title").innerHTML = title;
@@ -1811,7 +1815,6 @@
     if (e.target.id === "modal-backdrop") closeModal();
   });
 
-  // 櫃檯服務快捷選單（站在 POS 機或延伸櫃檯前按調查時開啟）
   function openCounterConciergeModal(counterName) {
     openModal(`🛎️ ${counterName}`, `
       <p style="margin-top:0;color:#d1d5db;">歡迎來到 HOLA 大墩店服務收銀區！您想辦理哪一項服務？</p>
@@ -1821,11 +1824,11 @@
         <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 加家具專員 KOBE LINE 線上諮詢</a>
       </div>
     `);
-    document.getElementById("quick-sku-btn").onclick = openSkuModal;
+    document.getElementById("quick-sku-btn").onclick = () => openSkuModal();
     document.getElementById("quick-box-btn").onclick = openBlindBoxModal;
   }
 
-  // ID 1 金漸層貓：SKU 價格與庫存查詢
+  // ID 1 金漸層貓：透過 GAS 直連《商品全資料》即時查詢
   function openSkuModal(prefillSku = "") {
     const asset = state.assetsMap.get(1);
     const speech = (asset && asset.Dialog) ? asset.Dialog : "喵～歡迎光臨 HOLA 大墩店！輸入商品 SKU 貨號或品名關鍵字，我立刻幫您查價格與店內庫存！";
@@ -1835,52 +1838,57 @@
         <div>${speech}</div>
       </div>
       <div class="input-group">
-        <input type="text" id="sku-query-input" placeholder="輸入 SKU（例如 016...）或商品名稱" value="${prefillSku}" />
+        <input type="text" id="sku-query-input" placeholder="輸入 SKU（例如 014092932）或商品名稱" value="${prefillSku}" />
         <button class="btn-action" id="sku-search-btn">查詢</button>
       </div>
       <div id="sku-result-area"></div>
       <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 傳送商品給 KOBE 專員保留 / 報價</a>
     `);
 
-    const runSearch = () => {
-      const q = document.getElementById("sku-query-input").value.trim().toLowerCase();
+    const runSearch = async () => {
+      const q = document.getElementById("sku-query-input").value.trim();
       const area = document.getElementById("sku-result-area");
       if (!q) {
         area.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入 SKU 貨號或商品關鍵字喔！</div>`;
         return;
       }
-      if (!state.products.length) {
-        area.innerHTML = `<div style="color:#9ca3af;font-size:13px;">商品全資料正在載入中，請稍候 2 秒再按一次查詢...</div>`;
-        return;
-      }
-      const matches = state.products.filter(p =>
-        p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)
-      ).slice(0, 8);
 
-      if (!matches.length) {
-        area.innerHTML = `
-          <div class="sku-result-box">
-            <div style="color:#fca5a5;font-weight:700;">查無「${q}」的本地庫存紀錄</div>
-            <div style="margin-top:6px;font-size:12px;color:#9ca3af;">可點擊下方按鈕直接前往 HOLA 官網查看：</div>
-            <a href="https://www.hola.com.tw/p/${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#38bdf8;font-weight:700;">🔗 前往 HOLA 官網查看 /p/${q}</a>
-          </div>
-        `;
-        return;
-      }
+      area.innerHTML = `<div style="color:#38bdf8;font-size:13px;padding:6px 0;">⏳ 正在連線試算表查詢「${q}」...</div>`;
 
-      area.innerHTML = matches.map(p => `
-        <div class="sku-result-box">
-          <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">${p.name}</div>
-          <div class="sku-row"><span>SKU 貨號</span><strong>${p.sku}</strong></div>
-          <div class="sku-row"><span>原價 / 特價</span><strong>${p.price ? "$" + p.price : "-"} / <span style="color:#4ade80;">${p.promoPrice ? "$" + p.promoPrice : "依門市為準"}</span></strong></div>
-          <div class="sku-row"><span>大墩店(630) 庫存 / 展示</span><strong>${p.stock630} 件 / ${p.show630} 件</strong></div>
-          <div class="sku-row"><span>楊梅總倉可用</span><strong>${p.stockYM} 件</strong></div>
-          ${p.promoTag ? `<div class="sku-row"><span>促銷檔期</span><strong style="color:#fb923c;">${p.promoTag}</strong></div>` : ""}
-          <div style="margin-top:6px;text-align:right;">
-            <a href="https://www.hola.com.tw/p/${encodeURIComponent(p.sku)}" target="_blank" rel="noopener" style="color:#38bdf8;font-size:12px;font-weight:700;">🔗 開啟官網商品頁</a>
-          </div>
-        </div>
-      `).join("");
+      try {
+        const matches = await queryProductsFromGAS(q);
+        if (!matches.length) {
+          area.innerHTML = `
+            <div class="sku-result-box">
+              <div style="color:#fca5a5;font-weight:700;">試算表《商品全資料》查無「${q}」</div>
+              <div style="margin-top:6px;font-size:12px;color:#9ca3af;">請確認 SKU 是否正確，或點擊下方前往官網查看：</div>
+              <a href="https://www.hola.com.tw/p/${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#38bdf8;font-weight:700;">🔗 前往 HOLA 官網查看 /p/${q}</a>
+            </div>
+          `;
+          return;
+        }
+
+        area.innerHTML = matches.map(p => {
+          const origPriceStr = formatPriceDisplay(p.price) || "-";
+          const promoPriceStr = formatPriceDisplay(p.promoPrice);
+          return `
+            <div class="sku-result-box">
+              <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">${p.name}</div>
+              <div class="sku-row"><span>SKU 貨號</span><strong>${p.sku}</strong></div>
+              <div class="sku-row"><span>原價 / 特價</span><strong>${origPriceStr} / <span style="color:#4ade80;">${promoPriceStr || "依門市為準"}</span></strong></div>
+              <div class="sku-row"><span>大墩店(630) 庫存 / 展示</span><strong>${p.stock630 || 0} 件 / ${p.show630 || 0} 件</strong></div>
+              <div class="sku-row"><span>楊梅總倉可用</span><strong>${p.stockYM || 0} 件</strong></div>
+              ${p.promoTag ? `<div class="sku-row"><span>促銷檔期</span><strong style="color:#fb923c;">${p.promoTag}</strong></div>` : ""}
+              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+                <button class="btn-action secondary" style="padding:5px 9px;font-size:12px;" onclick="window.__openExclusiveCardBySku('${p.sku.replace(/'/g, "")}')">🎁 生成專屬提案卡</button>
+                <a href="https://www.hola.com.tw/p/${encodeURIComponent(p.sku)}" target="_blank" rel="noopener" style="color:#38bdf8;font-size:12px;font-weight:700;">🔗 官網商品頁</a>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        area.innerHTML = `<div style="color:#fca5a5;font-size:13px;">⚠️ 查詢連線異常，請確認網路後再試一次。</div>`;
+      }
     };
 
     document.getElementById("sku-search-btn").onclick = runSearch;
@@ -1890,50 +1898,68 @@
     if (prefillSku) runSearch();
   }
 
-  // ID 2 無毛貓：60 天 VIP 盲盒（取代光明燈）
+  // ID 2 無毛貓：60 天 VIP 盲盒鑄造器（生成圖三 HOLA EXCLUSIVE 專屬提案卡連結）
   function openBlindBoxModal() {
     const asset = state.assetsMap.get(2);
-    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造一組效期 60 天的「VIP 專屬驚喜盲盒」分享連結！";
+    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造效期 60 天的「HOLA EXCLUSIVE 專屬家具提案盲盒」連結！";
     openModal(`🐈 無毛貓服務人員 — 60天 VIP 盲盒`, `
       <div class="npc-speech">
         <img src="./Hairless.png" alt="無毛貓" />
         <div>${speech}</div>
       </div>
       <div class="input-group">
-        <input type="text" id="blindbox-sku-input" placeholder="輸入要藏進盲盒的 SKU 貨號" />
+        <input type="text" id="blindbox-sku-input" placeholder="輸入商品 SKU（例如 014092932）" />
         <button class="btn-action" id="blindbox-mint-btn">🎁 生成盲盒</button>
       </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input type="text" id="blindbox-custom-price" placeholder="選填：自訂專屬優惠價（留空自動抓試算表）" style="flex:1;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;user-select:text;" />
+      </div>
       <div style="margin-bottom:8px;">
-        <input type="text" id="blindbox-note-input" placeholder="選填：給貴賓的專屬祝福或優惠備註" style="width:100%;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:13px;" />
+        <input type="text" id="blindbox-note-input" placeholder="選填：給貴賓的專屬提案備註" style="width:100%;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;user-select:text;" />
       </div>
       <div id="blindbox-output"></div>
     `);
 
-    document.getElementById("blindbox-mint-btn").onclick = () => {
+    document.getElementById("blindbox-mint-btn").onclick = async () => {
       const sku = document.getElementById("blindbox-sku-input").value.trim();
+      const customPrice = document.getElementById("blindbox-custom-price").value.trim();
       const note = document.getElementById("blindbox-note-input").value.trim();
       const out = document.getElementById("blindbox-output");
+
       if (!sku) {
         out.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入要裝進盲盒的 SKU 貨號！</div>`;
         return;
       }
+
+      out.innerHTML = `<div style="color:#38bdf8;font-size:13px;padding:6px 0;">⏳ 正在讀取商品資料並鑄造 60 天盲盒...</div>`;
+
+      let matchedProduct = null;
+      try {
+        const list = await queryProductsFromGAS(sku);
+        matchedProduct = list.find(p => p.sku.toLowerCase() === sku.toLowerCase()) || list[0] || null;
+      } catch (_) {}
+
       const payload = {
-        s: sku,
-        n: note || "HOLA 大墩店 KOBE 專員為您精選的 VIP 驚喜推薦！",
+        s: matchedProduct ? matchedProduct.sku : sku,
+        nm: matchedProduct ? matchedProduct.name : "",
+        pr: customPrice || (matchedProduct ? (matchedProduct.promoPrice || matchedProduct.price) : ""),
+        st: matchedProduct ? (matchedProduct.stockYM || matchedProduct.stock630 || "0") : "",
+        n: note,
         t: Date.now()
       };
+
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       const shareUrl = `${location.origin}${location.pathname}?box=${encodeURIComponent(encoded)}`;
 
       out.innerHTML = `
-        <div class="blindbox-gift">
-          <div style="font-size:28px;">🎁✨</div>
-          <div style="font-weight:800;color:#fde68a;margin:4px 0;">60 天 VIP 盲盒鑄造成功！</div>
-          <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">客人點開下方連結後，將直接進入 3D 展間並開啟您的推薦盲盒：</div>
-          <input type="text" readonly value="${shareUrl}" id="blindbox-url-field" style="width:100%;background:#0d1015;border:1px solid #4b5563;color:#38bdf8;padding:6px 8px;border-radius:6px;font-size:11px;margin-bottom:8px;" />
+        <div class="blindbox-unbox-stage" style="padding:14px 10px;">
+          <div style="font-size:24px;">🎁✨</div>
+          <div style="font-weight:800;color:#fde68a;margin:4px 0;">${payload.nm || "SKU: " + payload.s}</div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">客人點開連結後，將拆開「HOLA EXCLUSIVE 您的專屬家具提案」盲盒：</div>
+          <input type="text" readonly value="${shareUrl}" id="blindbox-url-field" style="width:100%;background:#0d1015;border:1px solid #4b5563;color:#38bdf8;padding:6px 8px;border-radius:6px;font-size:11px;margin-bottom:8px;user-select:all;" />
           <div style="display:flex;gap:6px;justify-content:center;">
             <button class="btn-action" id="copy-box-btn">📋 複製盲盒連結</button>
-            <button class="btn-action secondary" id="preview-box-btn">👀 立即預覽開啟</button>
+            <button class="btn-action secondary" id="preview-box-btn">👀 預覽盲盒卡片</button>
           </div>
         </div>
       `;
@@ -1942,37 +1968,91 @@
         const field = document.getElementById("blindbox-url-field");
         field.select();
         navigator.clipboard?.writeText(shareUrl);
-        showPA("✅ VIP 盲盒連結已複製，可直接貼到 LINE 傳給客人！");
+        showPA("✅ 專屬提案盲盒連結已複製，可直接傳到 LINE 給客人！");
       };
-      document.getElementById("preview-box-btn").onclick = () => revealBlindBox(payload);
+      document.getElementById("preview-box-btn").onclick = () => renderExclusiveProposalCard(payload);
     };
   }
 
-  function revealBlindBox(payload) {
+  // 直接開啟圖三樣式的【HOLA EXCLUSIVE 您的專屬家具提案】卡片
+  async function renderExclusiveProposalCard(payload) {
     const daysLeft = Math.max(0, Math.ceil((payload.t + 60 * 86400000 - Date.now()) / 86400000));
     if (daysLeft <= 0) {
-      openModal("🎁 VIP 盲盒已過期", `<p>此組 VIP 盲盒已超過 60 天效期，歡迎聯絡 HOLA 大墩店家具專員 KOBE 領取最新優惠！</p>`);
+      openModal("🎁 VIP 專屬提案已過期", `<p>此組專屬家具提案連結已超過 60 天效期，歡迎聯絡大墩店家具顧問 <strong>蔡先生 (KOBE)</strong>（LINE ID: <code>${KOBE_LINE_ID}</code>）領取最新優惠！</p>`);
       return;
     }
-    const found = state.products.find(p => p.sku === payload.s);
-    const itemName = found ? found.name : `精選商品 (SKU: ${payload.s})`;
-    const priceInfo = found && found.promoPrice ? `VIP 驚喜特價：$${found.promoPrice}` : (found && found.price ? `參考售價：$${found.price}` : "專員專屬禮遇價");
 
-    openModal("🎁 您收到一份 HOLA 大墩店 VIP 盲盒！", `
-      <div class="blindbox-gift">
-        <div style="font-size:36px;">🎉🎁🎉</div>
-        <div style="font-size:16px;font-weight:800;color:#fde68a;margin:6px 0;">${itemName}</div>
-        <div style="font-size:13px;color:#4ade80;font-weight:700;">${priceInfo}</div>
-        <p style="font-size:13px;color:#e5e7eb;background:#11151c;padding:8px;border-radius:8px;margin:10px 0;">「${payload.n}」</p>
-        <div style="font-size:11px;color:#9ca3af;">盲盒有效期限剩餘：${daysLeft} 天</div>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
-          <a class="btn-action" href="https://www.hola.com.tw/p/${encodeURIComponent(payload.s)}" target="_blank" rel="noopener" style="text-decoration:none;">🔗 查看商品詳細規格</a>
-          <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 聯絡 KOBE 專員預約體驗</a>
+    // 即時向試算表確認最新品名、價格與倉庫庫存
+    let liveProduct = null;
+    try {
+      const list = await queryProductsFromGAS(payload.s);
+      liveProduct = list.find(p => p.sku.toLowerCase() === payload.s.toLowerCase()) || list[0] || null;
+    } catch (_) {}
+
+    const skuDisplay = (liveProduct && liveProduct.sku) ? liveProduct.sku : payload.s;
+    const nameDisplay = (liveProduct && liveProduct.name) ? liveProduct.name : (payload.nm || `精選推薦家具 (SKU: ${skuDisplay})`);
+    const rawPrice = payload.pr || (liveProduct ? (liveProduct.promoPrice || liveProduct.price) : "");
+    const priceDisplay = formatPriceDisplay(rawPrice) || "門市專屬禮遇價";
+
+    // 庫存數量顯示（優先顯示倉庫可用或大墩庫存）
+    let stockNum = "0";
+    if (liveProduct) {
+      const ym = parseInt(liveProduct.stockYM) || 0;
+      const d630 = parseInt(liveProduct.stock630) || 0;
+      stockNum = String(ym > 0 ? ym : d630);
+    } else if (payload.st) {
+      stockNum = payload.st;
+    }
+
+    const noteHtml = payload.n
+      ? `<div class="exclusive-note-box">💡 顧問專屬備註：${payload.n}</div>`
+      : "";
+
+    openModal(`🎁 HOLA 專屬家具提案`, `
+      <div class="exclusive-proposal-card">
+        <div class="exclusive-banner">
+          <div class="brand-en">HOLA EXCLUSIVE</div>
+          <div class="brand-zh">您的專屬家具提案</div>
+        </div>
+        <div class="exclusive-body">
+          <div class="exclusive-sku">SKU: ${skuDisplay}</div>
+          <div class="exclusive-name">${nameDisplay}</div>
+
+          <div class="exclusive-price-box">
+            <div class="lbl">專屬優惠價</div>
+            <div class="val">${priceDisplay}</div>
+          </div>
+
+          <div class="exclusive-stock-pill">
+            📦 現有倉庫庫存數量：${stockNum} 件
+          </div>
+
+          ${noteHtml}
+
+          <div class="exclusive-fineprint">
+            此報價單由您的專屬家具顧問提供，連結內含安全保護機制，將於 60 天後自動失效（目前剩餘 <strong>${daysLeft}</strong> 天）。<br />
+            ※ 結帳價格以門市當下檔期活動與系統定價為準；若庫存數量顯示為 0，請直接與顧問聯繫。
+          </div>
+
+          <div class="exclusive-advisor">
+            ✨ 現場鑑賞與專屬優惠，請指名大墩店家具顧問 <strong>蔡先生 (KOBE)</strong>。<br />
+            諮詢/保留請加 LINE ID: <strong>${KOBE_LINE_ID}</strong>
+          </div>
+
+          <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">
+            💬 點擊加 KOBE 的 LINE 諮詢 / 保留
+          </a>
+          <div class="exclusive-subhint">(點擊自動開啟 LINE，或手動搜尋 ID：${KOBE_LINE_ID})</div>
         </div>
       </div>
     `);
   }
 
+  window.__openExclusiveCardBySku = (sku) => {
+    renderExclusiveProposalCard({ s: sku, t: Date.now() });
+  };
+
+  // 當客人貼上盲盒網址進入網頁時：先顯示拆盲盒驚喜畫面，點擊後直接展開圖三專屬提案卡
   function checkIncomingBlindBox() {
     const params = new URLSearchParams(location.search);
     const boxParam = params.get("box");
@@ -1980,12 +2060,27 @@
     try {
       const decoded = JSON.parse(decodeURIComponent(escape(atob(boxParam))));
       if (decoded && decoded.s) {
-        setTimeout(() => revealBlindBox(decoded), 600);
+        setTimeout(() => {
+          openModal("🎁 您收到一份 HOLA 大墩店 VIP 盲盒！", `
+            <div class="blindbox-unbox-stage">
+              <div style="font-size:44px;margin-bottom:6px;">🎁✨</div>
+              <div style="font-size:16px;font-weight:800;color:#fde68a;margin-bottom:6px;">
+                大墩店家具顧問 蔡先生 (KOBE)<br/>為您準備了一份專屬家具提案盲盒！
+              </div>
+              <div style="font-size:12px;color:#d1d5db;margin-bottom:14px;">
+                點擊下方按鈕立即拆開，查看專屬優惠價與即時庫存
+              </div>
+              <button class="btn-action" id="btn-unbox-now" style="width:100%;padding:12px;font-size:15px;">
+                ✨ 點擊拆開專屬提案盲盒
+              </button>
+            </div>
+          `);
+          document.getElementById("btn-unbox-now").onclick = () => renderExclusiveProposalCard(decoded);
+        }, 450);
       }
     } catch (_) {}
   }
 
-  // 跑馬燈點擊事件
   document.getElementById("promo-marquee").addEventListener("click", () => {
     if (state.currentMarqueeItem) {
       openSkuModal(state.currentMarqueeItem.sku);
@@ -1994,7 +2089,6 @@
     }
   });
 
-  // 一般物件對話視窗
   function openGenericAssetModal(asset) {
     const baseFile = String(asset.File || "").split("|")[0].trim();
     const imgHtml = baseFile ? `<img src="./${encodeURIComponent(baseFile)}.png" alt="${asset.Name}" onerror="this.style.display='none'" />` : "";
@@ -2114,7 +2208,6 @@
     }
   });
 
-  // 五段縮放按鈕 (40x40 ~ 5x5)
   document.querySelectorAll(".zoom-chip").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".zoom-chip").forEach(b => b.classList.remove("active"));
@@ -2130,7 +2223,6 @@
     });
   });
 
-  // 工具切換 (放置 / 搬家 / 移除)
   document.querySelectorAll(".tool-btn[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.remove("active"));
@@ -2140,7 +2232,6 @@
     });
   });
 
-  // 四向旋轉 (0° / 90° / 180° / 270°)
   const DIR_LABELS = ["0°正面", "90°朝右", "180°背面", "270°朝左"];
   document.getElementById("btn-rotate-dir").addEventListener("click", () => {
     state.placeDir = (state.placeDir + 1) % 4;
@@ -2150,7 +2241,6 @@
     }
   });
 
-  // 分類頁籤切換 (NPC / Store / Furniture)
   document.querySelectorAll(".cat-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
@@ -2191,7 +2281,6 @@
     });
   }
 
-  // 雲端保存至【地圖配置3D】
   document.getElementById("btn-cloud-save").addEventListener("click", async () => {
     const code = encodeMapData();
     localStorage.setItem(LOCAL_MAP_KEY, code);
@@ -2218,7 +2307,7 @@
   });
 
   // =========================================================
-  // 12. 操控系統（3D 觸控轉向＋虛擬鍵＋點擊物件 / 2D 雙指縮放＋點擊編輯或尋路）
+  // 12. 操控系統
   // =========================================================
   document.querySelectorAll(".ctrl-btn[data-key]").forEach(btn => {
     const k = btn.dataset.key;
@@ -2254,7 +2343,6 @@
     if (e.key === "e" || e.key === "E") state.keys.strafeR = false;
   });
 
-  // Canvas 觸控與滑鼠手勢（3D 左右滑動轉視角 / 2D 雙指縮放＋拖曳平移＋點擊格線）
   let pointerDown = false;
   let pointerMoved = false;
   let lastPointerX = 0;
@@ -2307,7 +2395,7 @@
     lastPointerY = e.touches[0].clientY;
   }, { passive: true });
 
-  canvas.addEventListener("touchend", e => {
+  canvas.addEventListener("touchend", () => {
     if (pointerDown && !pointerMoved) {
       handleCanvasTap(lastPointerX, lastPointerY);
     }
@@ -2361,7 +2449,6 @@
     const cy = (clientY - rect.top) * dpr;
 
     if (state.view === "3d") {
-      // 檢查是否直接點中畫面上的貓咪或家具
       for (let i = renderedHitboxes3D.length - 1; i >= 0; i--) {
         const box = renderedHitboxes3D[i];
         if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
@@ -2372,13 +2459,11 @@
       return;
     }
 
-    // 2D 模式點擊網格
     const { tilePx, offsetX, offsetY } = get2DTransform();
     const gx = Math.floor((cx - offsetX) / tilePx);
     const gy = Math.floor((cy - offsetY) / tilePx);
     if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
 
-    // 若已解鎖裝潢面板且面板開啟中 -> 執行放置 / 搬家 / 移除
     const panelOpen = state.adminUnlocked && document.getElementById("builder-panel").classList.contains("show");
     if (panelOpen) {
       if (state.editorTool === "erase") {
@@ -2424,7 +2509,6 @@
       return;
     }
 
-    // 一般逛店狀態下點擊 2D 地板 -> Kobe 自動走到該格
     if (isCellWalkable(gx, gy)) {
       state.player.path = findPath2D(Math.floor(state.player.x), Math.floor(state.player.y), gx, gy);
     }
@@ -2440,7 +2524,6 @@
     return true;
   }
 
-  // 簡易 BFS 尋路（供 2D 點擊自動行走與遊戲模式 AI 顧客）
   function findPath2D(sx, sy, tx, ty) {
     if (sx === tx && sy === ty) return [];
     const queue = [[sx, sy]];
@@ -2475,7 +2558,7 @@
   }
 
   // =========================================================
-  // 13. 遊戲迴圈（移動碰撞 + 雙收銀台 AI 顧客分流）
+  // 13. 遊戲迴圈
   // =========================================================
   function tryMovePlayer(dx, dy) {
     const r = 0.28;
@@ -2500,7 +2583,6 @@
       state.player.y = ny;
     }
 
-    // 同步更新 2D 主角 Kobe 朝向 (0:下, 1:右, 2:上, 3:左)
     const deg = ((state.player.angle * 180 / Math.PI) % 360 + 360) % 360;
     if (deg >= 45 && deg < 135) state.player.dir2d = 0;
     else if (deg >= 135 && deg < 225) state.player.dir2d = 3;
@@ -2515,7 +2597,6 @@
     if (state.game.spawnTimer > 5.5 && state.game.guests.length < 8) {
       state.game.spawnTimer = 0;
       const colors = ["#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
-      // 隨機挑選賣場內一個可走位置逛逛
       let tx = 10 + Math.floor(Math.random() * 20);
       let ty = 8 + Math.floor(Math.random() * 22);
       if (!isCellWalkable(tx, ty)) { tx = 20; ty = 25; }
@@ -2549,7 +2630,6 @@
       } else if (g.state === "browse") {
         g.browseTime -= dt;
         if (g.browseTime <= 0) {
-          // 雙收銀台自動分流 (ID 22 與 ID 23)
           const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
           let targetX = 33;
           let targetY = 28;
@@ -2566,7 +2646,6 @@
       } else if (g.state === "queue") {
         g.queueTimer -= dt;
         if (g.queueTimer <= 0) {
-          // 自動結帳完成
           state.game.revenue += g.spend;
           state.game.guests.splice(i, 1);
           updateHudStatus();
@@ -2580,7 +2659,6 @@
     state.lastTime = now;
     const timeSec = now / 1000;
 
-    // 處理手動控制移動
     const moveSpeed = 4.6 * dt;
     const turnSpeed = 2.35 * dt;
     let movedManually = false;
@@ -2607,7 +2685,6 @@
     if (movedManually) {
       state.player.path = [];
     } else if (state.player.path.length > 0) {
-      // 2D 點擊自動尋路行走
       const target = state.player.path[0];
       const dx = target.x - state.player.x;
       const dy = target.y - state.player.y;
@@ -2625,13 +2702,12 @@
     if (state.view === "3d") {
       render3D(timeSec);
     } else {
-      render2D(timeSec);
+      render2D();
     }
 
     requestAnimationFrame(mainLoop);
   }
 
-  // 啟動系統
   initDataPipeline();
   checkIncomingBlindBox();
   updateHudStatus();
