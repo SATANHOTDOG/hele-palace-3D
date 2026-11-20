@@ -658,12 +658,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       text-decoration: none;
-      padding: 11px 14px;
+      padding: 11px 8px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
+      white-space: nowrap;
     }
 
     .sku-result-box {
@@ -885,7 +886,7 @@
     </div>
   </main>
 
-  <!-- 底部 DOOM 狀態列 -->
+  <!-- 底部 DOOM 風格狀態列 -->
   <footer id="doom-hud">
     <div class="hud-box">
       <span class="hud-label" id="hud-lbl-1">展間模式</span>
@@ -926,30 +927,30 @@
   const LINE_CONSULT_URL = `https://line.me/ti/p/~${KOBE_LINE_ID}`;
 
   const MAP_SIZE = 40;
-  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v1";
+  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v2";
 
   const DEFAULT_ASSETS = [
     { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
     { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
     { ID: 3, Category: "NPC", Name: "家具專員KOBE", File: "Kobe", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.65, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
+    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.52, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.68, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.68, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
   ];
 
   // =========================================================
   // 2. 全域狀態管理
   // =========================================================
   const state = {
-    view: "3d", // "3d" | "2d"
-    mode: "browse", // "browse" | "game"
+    view: "3d",           // "3d" | "2d"
+    mode: "browse",       // "browse" | "game"
     adminUnlocked: false,
-    editorTool: "place", // "place" | "move" | "erase"
+    editorTool: "place",  // "place" | "move" | "erase"
     editorCat: "NPC",
     selectedAssetId: 1,
-    placeDir: 0, // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
+    placeDir: 0,          // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
     movingObj: null,
-    modalToken: 0, // 視窗生命週期權杖，防止關閉後非同步回傳重複跳出
+    modalToken: 0,
 
     assetsMap: new Map(),
     assetsList: [],
@@ -1044,6 +1045,19 @@
     return getSpriteImage(baseFile, suffix, true);
   }
 
+  function resolveBoxFaceSprite(asset, faceDir, timeSec) {
+    if (!asset || !asset.File) return null;
+    const files = String(asset.File).split("|").map(s => s.trim()).filter(Boolean);
+    const fps = parseFloat(asset.FPS) || 1;
+    const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
+    const baseFile = files[frameIdx];
+
+    // faceDir 與 obj.dir 的相對方位：0=正面, 1=右側, 2=背面, 3=左側
+    const rel = (faceDir - (asset._objDir || 0) + 4) % 4;
+    const suffixes = ["", "_90", "_180", "_270"];
+    return getSpriteImage(baseFile, suffixes[rel], true);
+  }
+
   function preloadAllAssets() {
     state.assetsList.forEach(a => {
       const files = String(a.File || "").split("|").map(s => s.trim()).filter(Boolean);
@@ -1057,7 +1071,7 @@
   }
 
   // =========================================================
-  // 4. 建立 40×40 預設大墩店地圖
+  // 4. 建立 40×40 預設大墩店地圖（方案 A：靠右牆一字排開，左側開放通道）
   // =========================================================
   function buildDefaultHolaMap() {
     for (let y = 0; y < MAP_SIZE; y++) {
@@ -1075,29 +1089,23 @@
 
     state.objects = [];
 
-    // ㄇ字型上翼橫向延伸櫃檯
-    place(21, 35, 20, 0);
-    place(21, 37, 20, 0);
+    // 方案 A：從靠右牆(x=38)往左一字排開 6 座（12 格），正面朝向大門 (dir=0)
+    // 左側 x=26 完全留空作為員工與顧客通行走道
+    place(21, 37, 26, 0); // 1. 靠牆延伸櫃 (37, 38)
+    place(22, 35, 26, 0); // 2. POS機 (35, 36)
+    place(21, 33, 26, 0); // 3. 延伸櫃 (33, 34)
+    place(21, 31, 26, 0); // 4. 延伸櫃 (31, 32)
+    place(23, 29, 26, 0); // 5. POS機 (29, 30)
+    place(21, 27, 26, 0); // 6. 延伸櫃 (27, 28)
 
-    // ㄇ字型前排直向主櫃檯
-    place(21, 35, 24, 3);
-    place(21, 35, 26, 3);
-    place(22, 35, 28, 3);
-    place(23, 35, 30, 3);
-    place(21, 35, 32, 3);
-
-    // ㄇ字型下翼橫向延伸櫃檯
-    place(21, 35, 34, 2);
-    place(21, 37, 34, 2);
-
-    // 櫃檯內側服務人員
-    place(1, 36, 24, 3); // 1號：金漸層貓服務人員（SKU查詢）
-    place(2, 36, 26, 3); // 2號：無毛貓服務人員（VIP盲盒）
+    // 櫃檯後方服務人員（面向大門 dir=0）
+    place(1, 37, 24, 0);  // 金漸層貓服務人員（右側櫃檯後方）
+    place(2, 27, 24, 0);  // 無毛貓服務人員（左側櫃檯後方）
   }
 
   function encodeMapData() {
     return JSON.stringify({
-      v: 1,
+      v: 2,
       size: MAP_SIZE,
       objs: state.objects.map(o => [o.id, o.x, o.y, o.dir])
     });
@@ -1260,7 +1268,7 @@
         return;
       }
     } catch (_) {}
-    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
+    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊前方櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
   }
 
   function formatPriceDisplay(val) {
@@ -1287,7 +1295,7 @@
   setInterval(rotateMarqueeItem, 20000);
 
   // =========================================================
-  // 6. 3D 射線投射引擎（修復寬櫃檯螢幕邊緣裁切閃爍 Bug）
+  // 6. 3D 射線投射 + 真正 3D 立體方塊透視引擎
   // =========================================================
   const canvas = document.getElementById("main-canvas");
   const ctx = canvas.getContext("2d");
@@ -1307,11 +1315,33 @@
     return a;
   }
 
+  function distPointToSegment(px, py, ax, ay, bx, by) {
+    const vx = bx - ax;
+    const vy = by - ay;
+    const wx = px - ax;
+    const wy = py - ay;
+    const c1 = vx * wx + vy * wy;
+    if (c1 <= 0) return Math.hypot(px - ax, py - ay);
+    const c2 = vx * vx + vy * vy;
+    if (c2 <= c1) return Math.hypot(px - bx, py - by);
+    const b = c1 / c2;
+    return Math.hypot(px - (ax + b * vx), py - (ay + b * vy));
+  }
+
+  function worldToCamera(wx, wy, px, py, dirX, dirY, planeX, planeY, invDet) {
+    const dx = wx - px;
+    const dy = wy - py;
+    const tx = invDet * (dirY * dx - dirX * dy);
+    const tz = invDet * (-planeY * dx + planeX * dy);
+    return { tx, tz };
+  }
+
   function render3D(timeSec) {
     const W = canvas.width;
     const H = canvas.height;
     const halfH = H * 0.5;
 
+    // 天花板與賣場地板
     const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
     ceilGrad.addColorStop(0, "#14171d");
     ceilGrad.addColorStop(1, "#262b35");
@@ -1334,6 +1364,7 @@
     const py = state.player.y;
     const pAngle = state.player.angle;
 
+    // 1. 投射賣場外牆
     for (let i = 0; i < numRays; i++) {
       const cameraX = (2 * i / numRays) - 1;
       const rayAngle = pAngle + Math.atan(cameraX * Math.tan(fov / 2));
@@ -1401,6 +1432,7 @@
       ctx.fillRect(i * stripW, drawStart + lineH * 0.92, stripW + 0.8, lineH * 0.08);
     }
 
+    // 2. 收集 3D 物件（NPC 使用相機朝向立繪；Store / Furniture 使用真正 3D 固定方塊面片）
     const renderList = [];
 
     state.objects.forEach(obj => {
@@ -1410,28 +1442,70 @@
       const dx = bounds.centerX - px;
       const dy = bounds.centerY - py;
       const dist = Math.hypot(dx, dy);
-      if (dist < 0.12 || dist > 45) return;
+      if (dist > 45) return;
 
-      const facingAngles = [Math.PI / 2, 0, -Math.PI / 2, Math.PI];
-      const objFacing = facingAngles[obj.dir] ?? (Math.PI / 2);
-      const vecToCam = Math.atan2(py - bounds.centerY, px - bounds.centerX);
-      const relAngle = normalizeAngle(vecToCam - objFacing);
+      if (asset.Category === "NPC") {
+        if (dist < 0.15) return;
+        const facingAngles = [Math.PI / 2, 0, -Math.PI / 2, Math.PI];
+        const objFacing = facingAngles[obj.dir] ?? (Math.PI / 2);
+        const vecToCam = Math.atan2(py - bounds.centerY, px - bounds.centerX);
+        const relAngle = normalizeAngle(vecToCam - objFacing);
 
-      const deg = ((relAngle * 180 / Math.PI) % 360 + 360) % 360;
-      const isSideView = (deg >= 45 && deg < 135) || (deg >= 225 && deg < 315);
-      const worldWidth = isSideView ? asset.H : asset.W;
+        renderList.push({
+          type: "npc",
+          obj,
+          asset,
+          cx: bounds.centerX,
+          cy: bounds.centerY,
+          sortDist: dist,
+          relAngle,
+          worldWidth: asset.W,
+          scaleH: asset.ScaleH || 1
+        });
+      } else {
+        // Store / Furniture：建立固定於地面格線的 3D 立體方塊（0=南面, 1=東面, 2=北面, 3=西面）
+        const x0 = bounds.minX;
+        const x1 = bounds.maxX + 1;
+        const y0 = bounds.minY;
+        const y1 = bounds.maxY + 1;
+        const scaleH = asset.ScaleH || 0.65;
 
-      renderList.push({
-        type: "obj",
-        obj,
-        asset,
-        cx: bounds.centerX,
-        cy: bounds.centerY,
-        dist,
-        relAngle,
-        worldWidth,
-        scaleH: asset.ScaleH || 1
-      });
+        const faces = [];
+        if (py > y1) faces.push({ faceDir: 0, ax: x0, ay: y1, bx: x1, by: y1, shade: 1.0 });  // 南面
+        if (px > x1) faces.push({ faceDir: 1, ax: x1, ay: y1, bx: x1, by: y0, shade: 0.86 }); // 東面
+        if (py < y0) faces.push({ faceDir: 2, ax: x1, ay: y0, bx: x0, by: y0, shade: 0.94 }); // 北面
+        if (px < x0) faces.push({ faceDir: 3, ax: x0, ay: y0, bx: x0, by: y1, shade: 0.86 }); // 西面
+
+        // 若高度低於視線高度 (0.55)，先推入檯面頂板
+        if (scaleH < 0.55 && faces.length > 0) {
+          const maxFaceDist = Math.max(...faces.map(f => distPointToSegment(px, py, f.ax, f.ay, f.bx, f.by)));
+          renderList.push({
+            type: "boxTop",
+            obj,
+            asset,
+            x0, x1, y0, y1,
+            scaleH,
+            sortDist: maxFaceDist + 0.01
+          });
+        }
+
+        faces.forEach(f => {
+          const fDist = distPointToSegment(px, py, f.ax, f.ay, f.bx, f.by);
+          renderList.push({
+            type: "boxFace",
+            obj,
+            asset,
+            faceDir: f.faceDir,
+            ax: f.ax,
+            ay: f.ay,
+            bx: f.bx,
+            by: f.by,
+            shade: f.shade,
+            scaleH,
+            sortDist: fDist
+          });
+        });
+      }
     });
 
     if (state.mode === "game") {
@@ -1445,7 +1519,7 @@
             guest: g,
             cx: g.x,
             cy: g.y,
-            dist,
+            sortDist: dist,
             worldWidth: 0.75,
             scaleH: 0.92
           });
@@ -1453,7 +1527,8 @@
       });
     }
 
-    renderList.sort((a, b) => b.dist - a.dist);
+    // 由遠到近排序繪製
+    renderList.sort((a, b) => b.sortDist - a.sortDist);
 
     const dirX = Math.cos(pAngle);
     const dirY = Math.sin(pAngle);
@@ -1465,19 +1540,29 @@
     renderedHitboxes3D = [];
 
     for (const item of renderList) {
+      if (item.type === "boxTop") {
+        draw3DBoxTop(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH);
+        continue;
+      }
+
+      if (item.type === "boxFace") {
+        draw3DBoxFace(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, numRays, zBuffer, timeSec);
+        continue;
+      }
+
+      // NPC 與顧客立繪
       const spriteX = item.cx - px;
       const spriteY = item.cy - py;
 
       const transformX = invDet * (dirY * spriteX - dirX * spriteY);
       const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      if (transformY <= 0.08) continue;
+      if (transformY <= 0.15) continue;
 
-      const safeDepth = Math.max(0.22, transformY);
-      const spriteScreenX = (W / 2) * (1 + transformX / safeDepth);
-      const baseUnitH = Math.abs(H / safeDepth);
+      const spriteScreenX = (W / 2) * (1 + transformX / transformY);
+      const baseUnitH = Math.abs(H / transformY);
       const floorY = halfH + baseUnitH * 0.45;
 
-      if (item.type === "obj") {
+      if (item.type === "npc") {
         const resolved = resolveAssetSprite(item.asset, item.relAngle, timeSec);
         const drawH = baseUnitH * item.scaleH;
         let drawW = baseUnitH * item.worldWidth;
@@ -1491,21 +1576,16 @@
         const rightX = leftX + drawW;
         const topY = floorY - drawH;
 
-        // 完整檢查物件橫跨螢幕的整個水平區間，只要還有任何一角留在螢幕內且未被牆壁遮擋就持續繪製
         const startRay = Math.max(0, Math.floor((leftX / W) * numRays));
         const endRay = Math.min(numRays - 1, Math.ceil((rightX / W) * numRays));
         if (endRay < startRay) continue;
 
         let visible = false;
-        const step = Math.max(1, Math.floor((endRay - startRay) / 8));
-        for (let rIdx = startRay; rIdx <= endRay; rIdx += step) {
-          if (transformY < zBuffer[rIdx] + 0.45) {
+        for (let rIdx = startRay; rIdx <= endRay; rIdx += Math.max(1, Math.floor((endRay - startRay) / 6))) {
+          if (transformY < zBuffer[rIdx] + 0.25) {
             visible = true;
             break;
           }
-        }
-        if (!visible && transformY < zBuffer[endRay] + 0.45) {
-          visible = true;
         }
         if (!visible) continue;
 
@@ -1520,7 +1600,7 @@
           }
           ctx.restore();
         } else {
-          ctx.fillStyle = item.asset.Category === "NPC" ? "#f59e0b" : "#8d6e63";
+          ctx.fillStyle = "#f59e0b";
           ctx.fillRect(leftX, topY, drawW, drawH);
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 2;
@@ -1551,6 +1631,170 @@
     }
 
     updateCrosshairTarget();
+  }
+
+  // 繪製 3D 櫃檯檯面頂板
+  function draw3DBoxTop(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH) {
+    const corners = [
+      worldToCamera(item.x0, item.y0, px, py, dirX, dirY, planeX, planeY, invDet),
+      worldToCamera(item.x1, item.y0, px, py, dirX, dirY, planeX, planeY, invDet),
+      worldToCamera(item.x1, item.y1, px, py, dirX, dirY, planeX, planeY, invDet),
+      worldToCamera(item.x0, item.y1, px, py, dirX, dirY, planeX, planeY, invDet)
+    ];
+    if (corners.some(c => c.tz <= 0.12)) return;
+
+    const pts = corners.map(c => {
+      const sx = (W / 2) * (1 + c.tx / c.tz);
+      const unitH = H / c.tz;
+      const sy = halfH + unitH * (0.45 - item.scaleH);
+      return { sx, sy };
+    });
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0].sx, pts[0].sy);
+    ctx.lineTo(pts[1].sx, pts[1].sy);
+    ctx.lineTo(pts[2].sx, pts[2].sy);
+    ctx.lineTo(pts[3].sx, pts[3].sy);
+    ctx.closePath();
+    ctx.fillStyle = "#c8a97e";
+    ctx.fill();
+    ctx.strokeStyle = "#7c5832";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 繪製 3D 固定面片（沿用與牆壁一致的透視投影 + 近平面裁切 + 垂直切片貼圖）
+  function draw3DBoxFace(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, numRays, zBuffer, timeSec) {
+    let cA = worldToCamera(item.ax, item.ay, px, py, dirX, dirY, planeX, planeY, invDet);
+    let cB = worldToCamera(item.bx, item.by, px, py, dirX, dirY, planeX, planeY, invDet);
+
+    const NEAR_Z = 0.1;
+    if (cA.tz <= NEAR_Z && cB.tz <= NEAR_Z) return;
+
+    let uStart = 0;
+    let uEnd = 1;
+    if (cA.tz < NEAR_Z) {
+      const t = (NEAR_Z - cA.tz) / (cB.tz - cA.tz);
+      cA = { tx: cA.tx + t * (cB.tx - cA.tx), tz: NEAR_Z };
+      uStart = t;
+    } else if (cB.tz < NEAR_Z) {
+      const t = (NEAR_Z - cB.tz) / (cA.tz - cB.tz);
+      cB = { tx: cB.tx + t * (cA.tx - cB.tx), tz: NEAR_Z };
+      uEnd = 1 - t;
+    }
+
+    const sxA = (W / 2) * (1 + cA.tx / cA.tz);
+    const sxB = (W / 2) * (1 + cB.tx / cB.tz);
+    const minSx = Math.min(sxA, sxB);
+    const maxSx = Math.max(sxA, sxB);
+    if (maxSx < 0 || minSx > W) return;
+
+    const screenSpan = Math.abs(sxB - sxA);
+    const slices = Math.min(48, Math.max(6, Math.ceil(screenSpan / 5)));
+
+    const assetWithDir = Object.assign({}, item.asset, { _objDir: item.obj.dir });
+    const resolved = resolveBoxFaceSprite(assetWithDir, item.faceDir, timeSec);
+
+    let hitLeft = W, hitRight = 0, hitTop = H, hitBottom = 0;
+    let anyDrawn = false;
+
+    for (let s = 0; s < slices; s++) {
+      const t0 = s / slices;
+      const t1 = (s + 1) / slices;
+
+      const tx0 = cA.tx + t0 * (cB.tx - cA.tx);
+      const tz0 = cA.tz + t0 * (cB.tz - cA.tz);
+      const tx1 = cA.tx + t1 * (cB.tx - cA.tx);
+      const tz1 = cA.tz + t1 * (cB.tz - cA.tz);
+
+      const xLeft = (W / 2) * (1 + tx0 / tz0);
+      const xRight = (W / 2) * (1 + tx1 / tz1);
+      const sMinX = Math.min(xLeft, xRight);
+      const sMaxX = Math.max(xLeft, xRight);
+      const sW = sMaxX - sMinX;
+      if (sW <= 0.1 || sMaxX < 0 || sMinX > W) continue;
+
+      const midX = (sMinX + sMaxX) * 0.5;
+      const rayIdx = Math.floor((midX / W) * numRays);
+      const zMid = (tz0 + tz1) * 0.5;
+      if (rayIdx >= 0 && rayIdx < numRays && zMid > zBuffer[rayIdx] + 0.08) {
+        continue;
+      }
+
+      const unitH0 = H / tz0;
+      const unitH1 = H / tz1;
+      const floor0 = halfH + unitH0 * 0.45;
+      const floor1 = halfH + unitH1 * 0.45;
+      const top0 = floor0 - unitH0 * item.scaleH;
+      const top1 = floor1 - unitH1 * item.scaleH;
+
+      const drawTop = Math.min(top0, top1);
+      const drawBot = Math.max(floor0, floor1);
+      const drawH = Math.max(1, drawBot - drawTop);
+
+      anyDrawn = true;
+      hitLeft = Math.min(hitLeft, sMinX);
+      hitRight = Math.max(hitRight, sMaxX);
+      hitTop = Math.min(hitTop, drawTop);
+      hitBottom = Math.max(hitBottom, drawBot);
+
+      if (resolved && resolved.img) {
+        const u0 = uStart + t0 * (uEnd - uStart);
+        const u1 = uStart + t1 * (uEnd - uStart);
+        const imgW = resolved.img.width;
+        const imgH = resolved.img.height;
+        const srcU0 = resolved.flipX ? (1 - u1) : u0;
+        const srcU1 = resolved.flipX ? (1 - u0) : u1;
+        const sxSrc = Math.max(0, srcU0 * imgW);
+        const swSrc = Math.max(0.5, (srcU1 - srcU0) * imgW);
+
+        ctx.drawImage(resolved.img, sxSrc, 0, swSrc, imgH, sMinX, drawTop, sW + 0.7, drawH);
+      } else {
+        // 圖片尚未載入或未設定時的立體木紋櫃檯備援外觀
+        const distShade = Math.max(0.45, 1 - zMid / 40) * item.shade;
+        ctx.fillStyle = `rgb(${Math.floor(155 * distShade)},${Math.floor(122 * distShade)},${Math.floor(88 * distShade)})`;
+        ctx.fillRect(sMinX, drawTop, sW + 0.7, drawH);
+      }
+
+      // 側向面與距離微幅陰影，強化 3D 立體感
+      const darkness = Math.min(0.45, (1 - item.shade) + zMid / 90);
+      if (darkness > 0.02) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${darkness.toFixed(3)})`;
+        ctx.fillRect(sMinX, drawTop, sW + 0.7, drawH);
+      }
+    }
+
+    if (anyDrawn) {
+      // 畫出櫃檯輪廓細邊線，讓相鄰櫃檯接縫清晰俐落
+      const unitHA = H / cA.tz;
+      const unitHB = H / cB.tz;
+      const fA = halfH + unitHA * 0.45;
+      const fB = halfH + unitHB * 0.45;
+      const tA = fA - unitHA * item.scaleH;
+      const tB = fB - unitHB * item.scaleH;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(45, 30, 16, 0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(sxA, tA);
+      ctx.lineTo(sxB, tB);
+      ctx.lineTo(sxB, fB);
+      ctx.lineTo(sxA, fA);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
+      renderedHitboxes3D.push({
+        left: hitLeft,
+        right: hitRight,
+        top: hitTop,
+        bottom: hitBottom,
+        obj: item.obj
+      });
+    }
   }
 
   let renderedHitboxes3D = [];
@@ -1730,7 +1974,7 @@
 
     const frontAsset = state.assetsMap.get(frontObj.id);
     if (frontAsset && (frontAsset.Category === "Store" || [21, 22, 23].includes(frontObj.id))) {
-      for (const d of [1.8, 2.3, 2.8]) {
+      for (const d of [1.8, 2.3, 2.8, 3.3]) {
         const gx = Math.floor(px + cos * d);
         const gy = Math.floor(py + sin * d);
         const behind = getObjectAt(gx, gy);
@@ -1816,7 +2060,7 @@
   }
 
   // =========================================================
-  // 9. 互動視窗內容（權杖防連點＋無官網外連＋秒開盲盒提案卡）
+  // 9. 互動視窗內容（無官網外連＋防連點＋0 秒秒開盲盒提案卡）
   // =========================================================
   function openModal(title, html) {
     state.modalToken += 1;
@@ -1848,7 +2092,7 @@
     document.getElementById("quick-box-btn").onclick = openBlindBoxModal;
   }
 
-  // ID 1 金漸層貓：精準顯示 HOLA630庫存 / HOLA630展示 / 楊梅庫存（已完全拿掉官網外連）
+  // ID 1 金漸層貓（已徹底拿掉「官網商品頁」按鈕與所有外部網站連結）
   function openSkuModal(prefillSku = "") {
     const asset = state.assetsMap.get(1);
     const speech = (asset && asset.Dialog) ? asset.Dialog : "喵～歡迎光臨 HOLA 大墩店！輸入商品 SKU 貨號或品名關鍵字，我立刻幫您查價格與店內庫存！";
@@ -1904,7 +2148,7 @@
               <div class="sku-row"><span>楊梅總倉可用</span><strong>${p.stockYM} 件</strong></div>
               ${p.promoTag ? `<div class="sku-row"><span>促銷期間</span><strong style="color:#fb923c;">${p.promoTag}</strong></div>` : ""}
               <div style="margin-top:8px;">
-                <button class="btn-action secondary" style="width:100%;padding:7px 9px;font-size:12px;" onclick="window.__openExclusiveCardBySku('${p.sku.replace(/'/g, "")}')">🎁 生成此商品專屬提案卡</button>
+                <button class="btn-action secondary" style="width:100%;padding:8px 10px;font-size:12px;" onclick="window.__openExclusiveCardBySku('${p.sku.replace(/'/g, "")}')">🎁 生成專屬提案卡</button>
               </div>
             </div>
           `;
@@ -1923,7 +2167,7 @@
     if (prefillSku) runSearch();
   }
 
-  // ID 2 無毛貓：60 天 VIP 盲盒鑄造器（把完整資訊打包進連結，客人打開 0 秒秒開）
+  // ID 2 無毛貓：60 天 VIP 盲盒鑄造器
   function openBlindBoxModal() {
     const asset = state.assetsMap.get(2);
     const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造效期 60 天的「HOLA EXCLUSIVE 專屬家具提案盲盒」連結！";
@@ -2012,7 +2256,6 @@
     return `📦 現有倉庫庫存數量：${ym} 件<br/><span style="font-size:12px;font-weight:700;">（大墩店庫存：${d630} 件 ／ 現場展示：${sh630} 件）</span>`;
   }
 
-  // 0 秒秒開專屬提案卡，並於背景靜默核對最新庫存（若視窗已關閉則直接作廢）
   function renderExclusiveProposalCard(payload) {
     const daysLeft = Math.max(0, Math.ceil((payload.t + 60 * 86400000 - Date.now()) / 86400000));
     if (daysLeft <= 0) {
@@ -2036,7 +2279,6 @@
       ? `<div class="exclusive-note-box">💡 顧問專屬備註：${payload.n}</div>`
       : "";
 
-    // 立即渲染，0 秒不卡頓
     const activeToken = openModal(`🎁 HOLA 專屬家具提案`, `
       <div class="exclusive-proposal-card">
         <div class="exclusive-banner">
@@ -2076,7 +2318,6 @@
       </div>
     `);
 
-    // 背景靜默同步最新試算表數據；若使用者已按 X 關閉視窗（modalToken 改變），則直接捨棄不跳出
     queryProductsFromGAS(payload.s).then(list => {
       if (state.modalToken !== activeToken) return;
       const live = list.find(p => p.sku.toLowerCase() === String(payload.s).toLowerCase()) || list[0];
@@ -2101,7 +2342,6 @@
     renderExclusiveProposalCard({ s: sku, t: Date.now() });
   };
 
-  // 客人貼上盲盒網址進入網頁時：防連點鎖定＋0 秒秒開
   function checkIncomingBlindBox() {
     const params = new URLSearchParams(location.search);
     const boxParam = params.get("box");
@@ -2656,8 +2896,8 @@
       state.game.spawnTimer = 0;
       const colors = ["#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
       let tx = 10 + Math.floor(Math.random() * 20);
-      let ty = 8 + Math.floor(Math.random() * 22);
-      if (!isCellWalkable(tx, ty)) { tx = 20; ty = 25; }
+      let ty = 8 + Math.floor(Math.random() * 16);
+      if (!isCellWalkable(tx, ty)) { tx = 20; ty = 30; }
 
       state.game.guests.push({
         id: Date.now() + Math.random(),
@@ -2689,3229 +2929,15 @@
         g.browseTime -= dt;
         if (g.browseTime <= 0) {
           const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
-          let targetX = 33;
-          let targetY = 28;
+          let targetX = 35;
+          let targetY = 27;
           if (posCounters.length > 0) {
             const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
-            targetX = Math.max(1, chosen.x - 1);
-            targetY = chosen.y;
-          }
-          g.state = "queue";
-          g.queueTimer = 10;
-          g.path = findPath2D(Math.floor(g.x), Math.floor(g.y), targetX, targetY);
-          updateHudStatus();
-        }
-      } else if (g.state === "queue") {
-        g.queueTimer -= dt;
-        if (g.queueTimer <= 0) {
-          state.game.revenue += g.spend;
-          state.game.guests.splice(i, 1);
-          updateHudStatus();
-        }
-      }
-    }
-  }
-
-  function mainLoop(now) {
-    const dt = Math.min(0.05, (now - state.lastTime) / 1000);
-    state.lastTime = now;
-    const timeSec = now / 1000;
-
-    const moveSpeed = 4.6 * dt;
-    const turnSpeed = 2.35 * dt;
-    let movedManually = false;
-
-    if (state.keys.turnL) { state.player.angle -= turnSpeed; movedManually = true; }
-    if (state.keys.turnR) { state.player.angle += turnSpeed; movedManually = true; }
-    if (state.keys.fwd) {
-      tryMovePlayer(Math.cos(state.player.angle) * moveSpeed, Math.sin(state.player.angle) * moveSpeed);
-      movedManually = true;
-    }
-    if (state.keys.back) {
-      tryMovePlayer(-Math.cos(state.player.angle) * moveSpeed * 0.75, -Math.sin(state.player.angle) * moveSpeed * 0.75);
-      movedManually = true;
-    }
-    if (state.keys.strafeL) {
-      tryMovePlayer(Math.cos(state.player.angle - Math.PI / 2) * moveSpeed * 0.85, Math.sin(state.player.angle - Math.PI / 2) * moveSpeed * 0.85);
-      movedManually = true;
-    }
-    if (state.keys.strafeR) {
-      tryMovePlayer(Math.cos(state.player.angle + Math.PI / 2) * moveSpeed * 0.85, Math.sin(state.player.angle + Math.PI / 2) * moveSpeed * 0.85);
-      movedManually = true;
-    }
-
-    if (movedManually) {
-      state.player.path = [];
-    } else if (state.player.path.length > 0) {
-      const target = state.player.path[0];
-      const dx = target.x - state.player.x;
-      const dy = target.y - state.player.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 0.12) {
-        state.player.path.shift();
-      } else {
-        state.player.angle = Math.atan2(dy, dx);
-        tryMovePlayer((dx / dist) * moveSpeed, (dy / dist) * moveSpeed);
-      }
-    }
-
-    updateGameSimulation(dt);
-
-    if (state.view === "3d") {
-      render3D(timeSec);
-    } else {
-      render2D();
-    }
-
-    requestAnimationFrame(mainLoop);
-  }
-
-  initDataPipeline();
-  checkIncomingBlindBox();
-  updateHudStatus();
-  requestAnimationFrame(mainLoop);
-})();
-</script>
-</body>
-</html>
-
-
-取得 Android 版 Outlook
-Kobe Tsai_蔡志宏
-
-Kobe Tsai_蔡志宏
-// ==========================================
-// 試算表分頁與管理員設定
-// ==========================================
-const SHEET_NAME = "商品全資料";
-const STATS_SHEET_NAME = "流量統計";
-const MAP_SHEET_NAME = "地圖配置";
-const ASSETS_3D_SHEET_NAME = "和樂宮3D素材";
-const MAP_3D_SHEET_NAME = "地圖配置3D";
-const ADMIN_PASS = "0816";
-
-// ==========================================
-// 1. 原本功能完整保留：官網 SKU 網址巡邏檢查器
-// ==========================================
-function runHolaLinkChecker() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    Logger.log("找不到分頁：" + SHEET_NAME);
-    return;
-  }
-
-  const dataRange = sheet.getDataRange();
-  const values = dataRange.getValues();
-  const headers = values[0];
-
-  const skuCol = headers.indexOf("SKU");
-  const ymStockCol = headers.indexOf("楊梅庫存");
-  const stockCol = headers.indexOf("HOLA630庫存");
-  const showCol = headers.indexOf("HOLA630展示");
-  const statusCol = headers.indexOf("官網狀態");
-
-  if (skuCol === -1 || statusCol === -1) {
-    Logger.log("找不到必要的欄位，請檢查標題名稱是否完全符合：SKU, 官網狀態");
-    return;
-  }
-
-  let processCount = 0;
-  const MAX_PROCESS = 100;
-
-  for (let i = 1; i < values.length; i++) {
-    if (processCount >= MAX_PROCESS) {
-      Logger.log(`已達到單次執行上限 (${MAX_PROCESS} 筆)，休息一下下次再戰。`);
-      break;
-    }
-
-    const sku = values[i][skuCol];
-    const ymStock = parseInt(values[i][ymStockCol]) || 0;
-    const stock = parseInt(values[i][stockCol]) || 0;
-    const show = parseInt(values[i][showCol]) || 0;
-    const currentStatus = values[i][statusCol];
-
-    if (sku && (ymStock !== 0 || stock !== 0 || show !== 0) && currentStatus === "") {
-      const url = `https://www.hola.com.tw/p/${sku}`;
-      Logger.log(`[${processCount + 1}] 正在檢查 SKU: ${sku} (楊梅:${ymStock}, 庫存:${stock}, 展示:${show})`);
-
-      try {
-        const options = {
-          "muteHttpExceptions": true,
-          "headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          }
-        };
-        const response = UrlFetchApp.fetch(url, options);
-        const code = response.getResponseCode();
-
-        if (code === 404) {
-          sheet.getRange(i + 1, statusCol + 1).setValue("失效");
-          Logger.log(`-> 判定: 失效 (404)`);
-        } else if (code === 200) {
-          sheet.getRange(i + 1, statusCol + 1).setValue("正常");
-          Logger.log(`-> 判定: 正常 (200)`);
-        } else {
-          sheet.getRange(i + 1, statusCol + 1).setValue(`異常(${code})`);
-          Logger.log(`-> 判定: 未知狀態碼 ${code}`);
-        }
-      } catch (e) {
-        Logger.log(`連線失敗: ${e}`);
-        sheet.getRange(i + 1, statusCol + 1).setValue("連線錯誤");
-      }
-
-      processCount++;
-      Utilities.sleep(1000);
-    }
-  }
-  Logger.log("✅ 網址巡邏任務執行完畢");
-}
-
-// ==========================================
-// 2. 統一 GET 入口
-// ==========================================
-function doGet(e) {
-  const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'get';
-
-  if (action === 'getMap') {
-    return handleGetMap();
-  }
-
-  if (action === 'get3D') {
-    return handleGet3DAll();
-  }
-
-  if (action === 'getAssets3D') {
-    return jsonResponse({
-      ok: true,
-      status: "ok",
-      assets: read3DAssets()
-    });
-  }
-
-  if (action === 'getMap3D') {
-    return handleGetMap3D();
-  }
-
-  // 金漸層貓 & 無毛貓盲盒即時查詢（僅讀取 A:H 8欄）
-  if (action === 'searchSku') {
-    const q = (e && e.parameter && e.parameter.q) ? String(e.parameter.q).trim() : '';
-    return handleSearchSku(q);
-  }
-
-  // 頂部跑馬燈隨機取得特價/有庫存商品（僅讀取 A:H 8欄）
-  if (action === 'getPromos') {
-    return handleGetPromos();
-  }
-
-  // 流量統計接收器
-  const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(STATS_SHEET_NAME);
-
-    const now = new Date();
-    const todayStr = Utilities.formatDate(now, "Asia/Taipei", "yyyy-MM-dd");
-    const monthStr = Utilities.formatDate(now, "Asia/Taipei", "yyyy-MM");
-
-    if (!sheet) {
-      sheet = ss.insertSheet(STATS_SHEET_NAME);
-      sheet.getRange("A1:C6").setValues([
-        ["統計項目", "人數", "日期標記"],
-        ["累積人數", 0, ""],
-        ["當月人數", 0, monthStr],
-        ["當日人數", 0, todayStr],
-        ["", "", ""],
-        ["歷史日期", "單日人數", ""]
-      ]);
-      sheet.getRange("C3:C4").setNumberFormat("@");
-      sheet.getRange("A1:C1").setFontWeight("bold").setBackground("#eef2f7");
-      sheet.getRange("A6:B6").setFontWeight("bold").setBackground("#eef2f7");
-    }
-
-    let totalCount = parseInt(sheet.getRange("B2").getValue()) || 0;
-    let monthCount = parseInt(sheet.getRange("B3").getValue()) || 0;
-    let savedMonth = normalizeDateCell(sheet.getRange("C3").getValue(), "yyyy-MM");
-    let dayCount = parseInt(sheet.getRange("B4").getValue()) || 0;
-    let savedDay = normalizeDateCell(sheet.getRange("C4").getValue(), "yyyy-MM-dd");
-
-    if (savedMonth !== monthStr) {
-      monthCount = 0;
-      savedMonth = monthStr;
-    }
-
-    if (savedDay !== todayStr) {
-      dayCount = 0;
-      savedDay = todayStr;
-    }
-
-    if (action === 'hit') {
-      totalCount += 1;
-      monthCount += 1;
-      dayCount += 1;
-
-      sheet.getRange("B2").setValue(totalCount);
-      sheet.getRange("B3:C3").setValues([[monthCount, monthStr]]);
-      sheet.getRange("B4:C4").setValues([[dayCount, todayStr]]);
-      sheet.getRange("C3:C4").setNumberFormat("@");
-
-      const latestLogDate = normalizeDateCell(sheet.getRange("A7").getValue(), "yyyy-MM-dd");
-      if (latestLogDate === todayStr) {
-        sheet.getRange("B7").setValue(dayCount);
-      } else {
-        sheet.insertRowBefore(7);
-        sheet.getRange("A7:B7").setValues([[todayStr, dayCount]]);
-        sheet.getRange("A7").setNumberFormat("@");
-      }
-    }
-
-    return jsonResponse({
-      status: "ok",
-      total: totalCount,
-      month: monthCount,
-      day: dayCount
-    });
-
-  } catch (err) {
-    return jsonResponse({ status: "error", message: err.toString() });
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-// ==========================================
-// 精準讀取「商品全資料」A:H 8 欄（跳過後面 QR Code 圖片欄）
-// A:SKU | B:商品名稱 | C:楊梅庫存 | D:HOLA630庫存 | E:HOLA630展示 | F:一般售價 | G:促銷售價 | H:促銷期間
-// ==========================================
-function getProductSheetValuesAH() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
-  if (!sheet) return null;
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return null;
-  // 只抓取第 1~8 欄 (A:H)，大幅縮短讀取時間
-  return sheet.getRange(1, 1, lastRow, 8).getDisplayValues();
-}
-
-function buildColumnIndexMap(headers) {
-  const idxOf = (exactName, fallbackIdx) => {
-    const found = headers.indexOf(exactName);
-    return found !== -1 ? found : fallbackIdx;
-  };
-  return {
-    sku: idxOf("SKU", 0),
-    name: idxOf("商品名稱", 1),
-    stockYM: idxOf("楊梅庫存", 2),
-    stock630: idxOf("HOLA630庫存", 3),
-    show630: idxOf("HOLA630展示", 4),
-    price: idxOf("一般售價", 5),
-    promoPrice: idxOf("促銷售價", 6),
-    promoTag: idxOf("促銷期間", 7)
-  };
-}
-
-function mapRowToProduct(colMap, row) {
-  return {
-    sku: String(row[colMap.sku] || "").trim(),
-    name: String(row[colMap.name] || "").trim(),
-    stockYM: String(row[colMap.stockYM] || "0").trim() || "0",
-    stock630: String(row[colMap.stock630] || "0").trim() || "0",
-    show630: String(row[colMap.show630] || "0").trim() || "0",
-    price: String(row[colMap.price] || "").trim(),
-    promoPrice: String(row[colMap.promoPrice] || "").trim(),
-    promoTag: String(row[colMap.promoTag] || "").trim()
-  };
-}
-
-function handleSearchSku(query) {
-  try {
-    if (!query) return jsonResponse({ ok: true, items: [] });
-    const values = getProductSheetValuesAH();
-    if (!values) {
-      return jsonResponse({ ok: false, msg: "找不到商品資料", items: [] });
-    }
-
-    const headers = values[0].map(h => String(h).trim());
-    const colMap = buildColumnIndexMap(headers);
-    const qLower = query.toLowerCase();
-    const qNoZero = qLower.replace(/^0+/, "");
-    const results = [];
-
-    for (let i = 1; i < values.length; i++) {
-      const item = mapRowToProduct(colMap, values[i]);
-      if (!item.sku && !item.name) continue;
-
-      const skuLower = item.sku.toLowerCase();
-      const skuNoZero = skuLower.replace(/^0+/, "");
-      const nameLower = item.name.toLowerCase();
-
-      const isMatch =
-        skuLower.indexOf(qLower) !== -1 ||
-        (qNoZero && skuNoZero === qNoZero) ||
-        nameLower.indexOf(qLower) !== -1;
-
-      if (isMatch) {
-        results.push(item);
-        if (results.length >= 10) break;
-      }
-    }
-
-    return jsonResponse({ ok: true, items: results });
-  } catch (err) {
-    return jsonResponse({ ok: false, msg: err.toString(), items: [] });
-  }
-}
-
-function handleGetPromos() {
-  try {
-    const values = getProductSheetValuesAH();
-    if (!values) return jsonResponse({ ok: true, items: [] });
-
-    const headers = values[0].map(h => String(h).trim());
-    const colMap = buildColumnIndexMap(headers);
-    const pool = [];
-
-    for (let i = 1; i < values.length; i++) {
-      const item = mapRowToProduct(colMap, values[i]);
-      if (!item.sku || !item.name) continue;
-      const hasStock = (parseInt(item.stock630) || 0) > 0 || (parseInt(item.show630) || 0) > 0 || (parseInt(item.stockYM) || 0) > 0;
-      const hasPromo = (item.promoPrice && item.promoPrice !== item.price) || item.promoTag;
-      if (hasPromo || hasStock) {
-        pool.push(item);
-      }
-    }
-
-    const picked = [];
-    const copy = pool.slice();
-    while (picked.length < 25 && copy.length > 0) {
-      const idx = Math.floor(Math.random() * copy.length);
-      picked.push(copy.splice(idx, 1)[0]);
-    }
-
-    return jsonResponse({ ok: true, items: picked });
-  } catch (err) {
-    return jsonResponse({ ok: false, items: [] });
-  }
-}
-
-// ==========================================
-// 讀取舊版 2D「地圖配置」分頁
-// ==========================================
-function handleGetMap() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(MAP_SHEET_NAME);
-    if (!sheet) {
-      return jsonResponse({ ok: true, code: "", publicEdit: false, updatedAt: "" });
-    }
-    const code = String(sheet.getRange("A2").getValue() || "").trim();
-    const pubRaw = String(sheet.getRange("B2").getValue() || "").trim().toUpperCase();
-    const updatedAt = normalizeDateCell(sheet.getRange("C2").getValue(), "yyyy-MM-dd HH:mm:ss");
-    const publicEdit = (pubRaw === "TRUE" || pubRaw === "1" || pubRaw === "YES");
-
-    return jsonResponse({ ok: true, code: code, publicEdit: publicEdit, updatedAt: updatedAt });
-  } catch (err) {
-    return jsonResponse({ ok: false, msg: err.toString() });
-  }
-}
-
-// ==========================================
-// 讀取「和樂宮3D素材」分頁
-// ==========================================
-function read3DAssets() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(ASSETS_3D_SHEET_NAME) || ss.getSheetByName("河樂宮3D素材");
-  if (!sheet) return [];
-
-  const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return [];
-
-  const headers = values[0].map(h => String(h).trim());
-  const list = [];
-
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
-    if (row[0] === "" && row[2] === "" && row[3] === "") continue;
-    const obj = {};
-    for (let c = 0; c < headers.length; c++) {
-      if (headers[c]) {
-        obj[headers[c]] = (row[c] !== undefined && row[c] !== null) ? String(row[c]).trim() : "";
-      }
-    }
-    list.push(obj);
-  }
-  return list;
-}
-
-// ==========================================
-// 讀取「地圖配置3D」分頁
-// ==========================================
-function readMap3DObject() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(MAP_3D_SHEET_NAME);
-  if (!sheet) {
-    return { ok: true, code: "", publicEdit: false, updatedAt: "" };
-  }
-  const code = String(sheet.getRange("A2").getValue() || "").trim();
-  const pubRaw = String(sheet.getRange("B2").getValue() || "").trim().toUpperCase();
-  const updatedAt = normalizeDateCell(sheet.getRange("C2").getValue(), "yyyy-MM-dd HH:mm:ss");
-  const publicEdit = (pubRaw === "TRUE" || pubRaw === "1" || pubRaw === "YES");
-
-  return { ok: true, code: code, publicEdit: publicEdit, updatedAt: updatedAt };
-}
-
-function handleGetMap3D() {
-  try {
-    return jsonResponse(readMap3DObject());
-  } catch (err) {
-    return jsonResponse({ ok: false, msg: err.toString() });
-  }
-}
-
-function handleGet3DAll() {
-  try {
-    return jsonResponse({
-      ok: true,
-      status: "ok",
-      assets: read3DAssets(),
-      mapData: readMap3DObject()
-    });
-  } catch (err) {
-    return jsonResponse({ ok: false, status: "error", msg: err.toString() });
-  }
-}
-
-// ==========================================
-// 3. 統一 POST 入口
-// ==========================================
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-
-  try {
-    const data = JSON.parse(e.postData.contents);
-    if (String(data.password) !== ADMIN_PASS) {
-      return jsonResponse({ ok: false, msg: "管理員密碼錯誤" });
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
-
-    if (data.action === "saveMap3D") {
-      let sheet3D = ss.getSheetByName(MAP_3D_SHEET_NAME);
-      if (!sheet3D) {
-        sheet3D = ss.insertSheet(MAP_3D_SHEET_NAME);
-        sheet3D.getRange("A1:C1").setValues([["Code", "PublicEdit", "UpdatedAt"]]);
-        sheet3D.getRange("A1:C1").setFontWeight("bold").setBackground("#fce8b2");
-        sheet3D.getRange("A4:B4").setValues([["歷史備份時間", "歷史配置代碼"]]);
-        sheet3D.getRange("A4:B4").setFontWeight("bold").setBackground("#eef2f7");
-      }
-
-      const codeStr = String(data.code || "");
-      sheet3D.getRange("A2:C2").setNumberFormat("@");
-      sheet3D.getRange("A2:C2").setValues([[
-        codeStr,
-        data.publicEdit ? "TRUE" : "FALSE",
-        nowStr
-      ]]);
-
-      if (codeStr) {
-        sheet3D.insertRowBefore(5);
-        sheet3D.getRange("A5:B5").setNumberFormat("@");
-        sheet3D.getRange("A5:B5").setValues([[nowStr, codeStr]]);
-        const lastRow = sheet3D.getLastRow();
-        if (lastRow > 19) {
-          sheet3D.deleteRows(20, lastRow - 19);
-        }
-      }
-
-      return jsonResponse({ ok: true, updatedAt: nowStr });
-    }
-
-    let sheet = ss.getSheetByName(MAP_SHEET_NAME);
-    if (!sheet) {
-      sheet = ss.insertSheet(MAP_SHEET_NAME);
-      sheet.getRange("A1:C1").setValues([["Code", "PublicEdit", "UpdatedAt"]]);
-      sheet.getRange("A1:C1").setFontWeight("bold").setBackground("#eef2f7");
-    }
-
-    sheet.getRange("A2:C2").setNumberFormat("@");
-    sheet.getRange("A2:C2").setValues([[
-      String(data.code || ""),
-      data.publicEdit ? "TRUE" : "FALSE",
-      nowStr
-    ]]);
-
-    return jsonResponse({ ok: true, updatedAt: nowStr });
-
-  } catch (err) {
-    return jsonResponse({ ok: false, msg: err.toString() });
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function normalizeDateCell(val, formatStr) {
-  if (val instanceof Date) {
-    return Utilities.formatDate(val, "Asia/Taipei", formatStr);
-  }
-  return String(val || "").trim();
-}
-
-function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-
-取得 Android 版 Outlook
-您
-週五 2026/11/20 下午 08:19
-https://satanhotdog.github.io/hele-palace-3D/
-Kobe Tsai_蔡志宏
-
-Kobe Tsai_蔡志宏
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>HOLA 大墩店 3D 虛擬展間｜和樂宮 3D</title>
-  <style>
-    :root {
-      --bg-dark: #121417;
-      --panel-bg: rgba(22, 26, 32, 0.94);
-      --panel-border: #3a424e;
-      --gold: #f5b942;
-      --gold-dim: #b88424;
-      --accent: #38bdf8;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --text-main: #f3f4f6;
-      --text-sub: #9ca3af;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100dvh;
-      overflow: hidden;
-      background: var(--bg-dark);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-    }
-
-    #app {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100dvh;
-      padding-bottom: var(--safe-bottom);
-    }
-
-    /* ================= 頂部導覽與特價跑馬燈 ================= */
-    #top-bar {
-      flex: 0 0 auto;
-      background: linear-gradient(180deg, #1e232b 0%, #161a20 100%);
-      border-bottom: 1px solid var(--panel-border);
-      padding: 6px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 20;
-    }
-
-    .top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .brand-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-      font-size: 14px;
-      color: var(--gold);
-      white-space: nowrap;
-    }
-
-    .mode-pill {
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(56, 189, 248, 0.16);
-      color: var(--accent);
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      font-weight: 700;
-    }
-    .mode-pill.game {
-      background: rgba(245, 185, 66, 0.18);
-      color: var(--gold);
-      border-color: rgba(245, 185, 66, 0.5);
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .btn-top {
-      border: 1px solid var(--panel-border);
-      background: #252b34;
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 5px 9px;
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: transform 0.08s, background 0.15s;
-    }
-    .btn-top:active { transform: scale(0.95); }
-    .btn-top.primary {
-      background: linear-gradient(135deg, #d97706, #b45309);
-      border-color: #f59e0b;
-      color: #fff;
-    }
-    .btn-top.active-view {
-      background: #0284c7;
-      border-color: #38bdf8;
-      color: #fff;
-    }
-
-    /* 特價商品跑馬燈 */
-    #promo-marquee {
-      background: rgba(15, 18, 22, 0.9);
-      border: 1px solid rgba(245, 185, 66, 0.35);
-      border-radius: 7px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .marquee-tag {
-      flex: 0 0 auto;
-      background: linear-gradient(90deg, #dc2626, #b91c1c);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 0 8px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      letter-spacing: 0.5px;
-      z-index: 2;
-    }
-
-    .marquee-track {
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-      height: 100%;
-      display: flex;
-      align-items: center;
-    }
-
-    #marquee-text {
-      display: inline-block;
-      white-space: nowrap;
-      font-size: 12px;
-      color: #fde68a;
-      font-weight: 600;
-      padding-left: 100%;
-      animation: marqueeScroll 22s linear infinite;
-    }
-
-    #promo-marquee:hover #marquee-text {
-      animation-play-state: paused;
-    }
-
-    @keyframes marqueeScroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
-    }
-
-    /* ================= 主視窗區 ================= */
-    #viewport-wrap {
-      flex: 1 1 auto;
-      position: relative;
-      overflow: hidden;
-      background: #1a1d24;
-      touch-action: none;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      image-rendering: pixelated;
-    }
-
-    #crosshair {
-      position: absolute;
-      top: 48%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 18px;
-      height: 18px;
-      pointer-events: none;
-      opacity: 0.75;
-    }
-    #crosshair::before, #crosshair::after {
-      content: "";
-      position: absolute;
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 0 3px #000;
-    }
-    #crosshair::before { top: 8px; left: 0; width: 18px; height: 2px; }
-    #crosshair::after { left: 8px; top: 0; width: 2px; height: 18px; }
-
-    #pa-banner {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(17, 24, 39, 0.88);
-      border: 1px solid var(--gold-dim);
-      color: #fef3c7;
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      max-width: 92%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.25s;
-      z-index: 12;
-    }
-    #pa-banner.show { opacity: 1; }
-
-    /* 3D 操控按鈕覆蓋層 */
-    #controls-3d {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .dpad-cluster {
-      position: absolute;
-      left: 14px;
-      bottom: 14px;
-      width: 132px;
-      height: 132px;
-      pointer-events: auto;
-    }
-
-    .ctrl-btn {
-      position: absolute;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: rgba(24, 28, 36, 0.72);
-      border: 1.5px solid rgba(255, 255, 255, 0.28);
-      color: #fff;
-      font-size: 16px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-      cursor: pointer;
-    }
-    .ctrl-btn:active, .ctrl-btn.pressed {
-      background: rgba(245, 185, 66, 0.55);
-      border-color: var(--gold);
-      transform: scale(0.94);
-    }
-
-    #btn-fwd { top: 0; left: 45px; }
-    #btn-back { bottom: 0; left: 45px; }
-    #btn-strafe-l { top: 45px; left: 0; }
-    #btn-strafe-r { top: 45px; right: 0; }
-
-    .action-cluster {
-      position: absolute;
-      right: 14px;
-      bottom: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
-      pointer-events: auto;
-    }
-
-    .turn-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .turn-btn {
-      position: static;
-      width: 48px;
-      height: 44px;
-    }
-
-    #btn-interact {
-      position: static;
-      width: 106px;
-      height: 48px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.92));
-      border: 1.5px solid #fde68a;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    }
-
-    /* 2D 縮放與裝潢工具列 */
-    #zoom-bar-2d {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      display: none;
-      flex-wrap: wrap;
-      gap: 4px;
-      z-index: 15;
-    }
-    #zoom-bar-2d.show { display: flex; }
-
-    .zoom-chip {
-      background: rgba(20, 24, 30, 0.88);
-      border: 1px solid var(--panel-border);
-      color: var(--text-main);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 5px 8px;
-      border-radius: 7px;
-      cursor: pointer;
-    }
-    .zoom-chip.active {
-      background: var(--accent);
-      color: #082f49;
-      border-color: #bae6fd;
-    }
-
-    #admin-unlock-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: none;
-      z-index: 15;
-      background: rgba(20, 24, 30, 0.9);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #admin-unlock-btn.show { display: inline-flex; align-items: center; gap: 4px; }
-
-    #builder-panel {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--panel-bg);
-      border-top: 1.5px solid var(--gold-dim);
-      padding: 8px 10px;
-      display: none;
-      flex-direction: column;
-      gap: 7px;
-      z-index: 18;
-      backdrop-filter: blur(8px);
-    }
-    #builder-panel.show { display: flex; }
-
-    .builder-tools-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 5px;
-      overflow-x: auto;
-    }
-
-    .tool-btn {
-      flex: 0 0 auto;
-      padding: 5px 9px;
-      border-radius: 7px;
-      border: 1px solid var(--panel-border);
-      background: #232832;
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .tool-btn.active {
-      background: #0284c7;
-      border-color: #38bdf8;
-      color: #fff;
-    }
-    .tool-btn.save {
-      background: #15803d;
-      border-color: #4ade80;
-      color: #fff;
-    }
-
-    .cat-tabs {
-      display: flex;
-      gap: 6px;
-    }
-    .cat-tab {
-      flex: 1;
-      text-align: center;
-      padding: 4px 6px;
-      font-size: 12px;
-      font-weight: 700;
-      border-radius: 6px;
-      background: #1a1e26;
-      border: 1px solid var(--panel-border);
-      color: var(--text-sub);
-      cursor: pointer;
-    }
-    .cat-tab.active {
-      background: rgba(245, 185, 66, 0.2);
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    .palette-strip {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-    .palette-item {
-      flex: 0 0 auto;
-      min-width: 72px;
-      padding: 5px 7px;
-      border-radius: 8px;
-      background: #1c2129;
-      border: 1.5px solid var(--panel-border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-    }
-    .palette-item.selected {
-      border-color: var(--gold);
-      background: rgba(245, 185, 66, 0.16);
-    }
-    .palette-item img {
-      width: 34px;
-      height: 34px;
-      object-fit: contain;
-    }
-    .palette-item span {
-      font-size: 11px;
-      color: var(--text-main);
-      max-width: 76px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* ================= 底部 DOOM 風格狀態列 ================= */
-    #doom-hud {
-      flex: 0 0 64px;
-      background: linear-gradient(180deg, #232730 0%, #15181e 100%);
-      border-top: 2px solid #3f4756;
-      display: grid;
-      grid-template-columns: 1.15fr 1.25fr 62px 1.3fr;
-      align-items: center;
-      padding: 4px 6px;
-      gap: 5px;
-      z-index: 20;
-    }
-
-    .hud-box {
-      height: 100%;
-      background: #101318;
-      border: 1px solid #2f3642;
-      border-radius: 7px;
-      padding: 4px 6px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-width: 0;
-      overflow: hidden;
-    }
-
-    .hud-label {
-      font-size: 10px;
-      color: var(--text-sub);
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      white-space: nowrap;
-      line-height: 1.1;
-    }
-
-    .hud-val {
-      font-size: clamp(12px, 3.3vw, 15px);
-      font-weight: 800;
-      color: var(--gold);
-      white-space: nowrap;
-      line-height: 1.25;
-      margin-top: 2px;
-    }
-    .hud-val.cyan { color: var(--accent); }
-    .hud-val.white { color: #f9fafb; font-size: clamp(11px, 3vw, 13px); }
-
-    .hud-avatar-box {
-      height: 54px;
-      width: 58px;
-      margin: 0 auto;
-      background: radial-gradient(circle at 50% 35%, #2b3240, #11141a);
-      border: 1.5px solid var(--gold-dim);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .hud-avatar-box img {
-      width: 48px;
-      height: 48px;
-      object-fit: contain;
-    }
-
-    /* ================= 彈出互動視窗 ================= */
-    #modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 14px;
-      z-index: 50;
-      backdrop-filter: blur(4px);
-    }
-    #modal-backdrop.show { display: flex; }
-
-    .modal-card {
-      width: 100%;
-      max-width: 420px;
-      max-height: 88dvh;
-      background: #1b2028;
-      border: 1.5px solid var(--gold-dim);
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
-    }
-
-    .modal-header {
-      padding: 11px 14px;
-      background: #232934;
-      border-bottom: 1px solid var(--panel-border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .modal-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--gold);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .modal-close {
-      background: #323946;
-      border: none;
-      color: #fff;
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .modal-body {
-      padding: 14px;
-      overflow-y: auto;
-      font-size: 14px;
-      line-height: 1.55;
-      color: var(--text-main);
-    }
-
-    .npc-speech {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      background: #13171d;
-      border: 1px solid #2e3543;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 12px;
-    }
-    .npc-speech img {
-      width: 52px;
-      height: 52px;
-      object-fit: contain;
-      flex: 0 0 auto;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .input-group input {
-      flex: 1;
-      background: #101318;
-      border: 1px solid #3f4856;
-      color: #fff;
-      padding: 9px 11px;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      user-select: text;
-    }
-    .input-group input:focus { border-color: var(--gold); }
-
-    .btn-action {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      border: none;
-      color: #fff;
-      font-weight: 800;
-      font-size: 13px;
-      padding: 9px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-      text-align: center;
-    }
-    .btn-action.secondary {
-      background: #2b323e;
-      border: 1px solid #475264;
-    }
-    .btn-action.line {
-      background: #06c755;
-      color: #fff;
-      width: 100%;
-      margin-top: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      text-decoration: none;
-      padding: 11px 14px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 800;
-    }
-
-    .sku-result-box {
-      background: #12161c;
-      border: 1px solid #333c4a;
-      border-radius: 10px;
-      padding: 10px;
-      margin-top: 8px;
-    }
-    .sku-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px dashed #28303d;
-      font-size: 13px;
-      gap: 8px;
-    }
-    .sku-row:last-child { border-bottom: none; }
-
-    /* ================= HOLA EXCLUSIVE 專屬提案盲盒卡片（圖三還原） ================= */
-    .exclusive-proposal-card {
-      background: #ffffff;
-      color: #111827;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-      border: 1px solid #e5e7eb;
-    }
-
-    .exclusive-banner {
-      background: linear-gradient(135deg, #1e3a8a 0%, #7e22ce 50%, #ea580c 100%);
-      color: #ffffff;
-      text-align: center;
-      padding: 18px 14px;
-    }
-    .exclusive-banner .brand-en {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: 2.5px;
-      margin: 0;
-    }
-    .exclusive-banner .brand-zh {
-      font-size: 13px;
-      font-weight: 600;
-      opacity: 0.92;
-      margin-top: 4px;
-    }
-
-    .exclusive-body {
-      padding: 16px 14px;
-      text-align: center;
-    }
-
-    .exclusive-sku {
-      font-size: 12px;
-      font-weight: 700;
-      color: #6b7280;
-      letter-spacing: 0.5px;
-    }
-
-    .exclusive-name {
-      font-size: 17px;
-      font-weight: 900;
-      color: #111827;
-      line-height: 1.4;
-      margin: 6px 0 12px;
-    }
-
-    .exclusive-price-box {
-      background: #f3f4f6;
-      border-radius: 10px;
-      padding: 12px 10px;
-      margin-bottom: 10px;
-    }
-    .exclusive-price-box .lbl {
-      font-size: 12px;
-      font-weight: 700;
-      color: #4b5563;
-    }
-    .exclusive-price-box .val {
-      font-size: 28px;
-      font-weight: 900;
-      color: #dc2626;
-      margin-top: 2px;
-      letter-spacing: 0.5px;
-    }
-
-    .exclusive-stock-pill {
-      background: #fef9c3;
-      border: 1px solid #fde047;
-      color: #854d0e;
-      font-size: 13px;
-      font-weight: 800;
-      padding: 7px 10px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .exclusive-note-box {
-      background: #fffbeb;
-      border-left: 3px solid #f59e0b;
-      color: #78350f;
-      font-size: 12.5px;
-      font-weight: 600;
-      padding: 8px 10px;
-      border-radius: 6px;
-      text-align: left;
-      margin-bottom: 10px;
-    }
-
-    .exclusive-fineprint {
-      font-size: 11px;
-      color: #6b7280;
-      text-align: left;
-      line-height: 1.5;
-      margin-bottom: 12px;
-    }
-
-    .exclusive-advisor {
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      color: #065f46;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 12px;
-      line-height: 1.55;
-      font-weight: 700;
-    }
-
-    .exclusive-subhint {
-      font-size: 11px;
-      color: #9ca3af;
-      margin-top: 6px;
-    }
-
-    .blindbox-unbox-stage {
-      text-align: center;
-      padding: 20px 12px;
-      background: radial-gradient(circle, rgba(245, 185, 66, 0.2), transparent 72%);
-      border: 1.5px dashed var(--gold);
-      border-radius: 12px;
-    }
-  </style>
-</head>
-<body>
-<div id="app">
-  <!-- 頂部導覽與特價跑馬燈 -->
-  <header id="top-bar">
-    <div class="top-row">
-      <div class="brand-badge">
-        <span>🏛️ HOLA大墩店</span>
-        <span id="mode-badge" class="mode-pill">3D逛逛</span>
-      </div>
-      <div class="top-actions">
-        <button id="btn-toggle-game" class="btn-top primary">🎮 進入遊戲模式</button>
-        <button id="btn-toggle-view" class="btn-top">🗺️ 2D地圖</button>
-      </div>
-    </div>
-    <!-- 特價商品跑馬燈 -->
-    <div id="promo-marquee" title="點擊查看特價商品詳情">
-      <div class="marquee-tag">🔥 特價快報</div>
-      <div class="marquee-track">
-        <span id="marquee-text">正在連線 HOLA 大墩店即時商品庫與促銷檔期...</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- 主視窗（3D 第一人稱 / 2D 平面配置） -->
-  <main id="viewport-wrap">
-    <canvas id="main-canvas"></canvas>
-    <div id="crosshair"></div>
-    <div id="pa-banner"></div>
-
-    <!-- 3D 虛擬搖桿與互動鍵 -->
-    <div id="controls-3d">
-      <div class="dpad-cluster">
-        <button class="ctrl-btn" id="btn-fwd" data-key="fwd">▲</button>
-        <button class="ctrl-btn" id="btn-back" data-key="back">▼</button>
-        <button class="ctrl-btn" id="btn-strafe-l" data-key="strafeL">◀</button>
-        <button class="ctrl-btn" id="btn-strafe-r" data-key="strafeR">▶</button>
-      </div>
-      <div class="action-cluster">
-        <div class="turn-row">
-          <button class="ctrl-btn turn-btn" id="btn-turn-l" data-key="turnL">↺</button>
-          <button class="ctrl-btn turn-btn" id="btn-turn-r" data-key="turnR">↻</button>
-        </div>
-        <button class="ctrl-btn" id="btn-interact">🔍 調查</button>
-      </div>
-    </div>
-
-    <!-- 2D 五段縮放按鈕（40x40 ~ 5x5） -->
-    <div id="zoom-bar-2d">
-      <button class="zoom-chip active" data-grid="40">40×40</button>
-      <button class="zoom-chip" data-grid="30">30×30</button>
-      <button class="zoom-chip" data-grid="20">20×20</button>
-      <button class="zoom-chip" data-grid="10">10×10</button>
-      <button class="zoom-chip" data-grid="5">5×5</button>
-    </div>
-
-    <!-- 2D 裝潢編輯解鎖鈕（密碼 0816） -->
-    <button id="admin-unlock-btn">🛠️ 裝潢編輯</button>
-
-    <!-- 2D 創造模式面板 -->
-    <div id="builder-panel">
-      <div class="builder-tools-row">
-        <button class="tool-btn active" data-tool="place">➕ 放置</button>
-        <button class="tool-btn" data-tool="move">✋ 搬家</button>
-        <button class="tool-btn" id="btn-rotate-dir">🔄 方向: 0°正面</button>
-        <button class="tool-btn" data-tool="erase">🧹 移除</button>
-        <button class="tool-btn save" id="btn-cloud-save">☁️ 雲端保存</button>
-      </div>
-      <div class="cat-tabs">
-        <div class="cat-tab active" data-cat="NPC">NPC 人物</div>
-        <div class="cat-tab" data-cat="Store">Store 賣場陳列</div>
-        <div class="cat-tab" data-cat="Furniture">Furniture 家具</div>
-      </div>
-      <div class="palette-strip" id="palette-strip"></div>
-    </div>
-  </main>
-
-  <!-- 底部 DOOM 狀態列 -->
-  <footer id="doom-hud">
-    <div class="hud-box">
-      <span class="hud-label" id="hud-lbl-1">展間模式</span>
-      <span class="hud-val" id="hud-val-1">自由巡店</span>
-    </div>
-    <div class="hud-box">
-      <span class="hud-label" id="hud-lbl-2">櫃檯服務</span>
-      <span class="hud-val cyan" id="hud-val-2">查詢 / 盲盒</span>
-    </div>
-    <div class="hud-avatar-box">
-      <img id="hud-kobe-img" src="./Kobe.png" alt="Kobe" />
-    </div>
-    <div class="hud-box">
-      <span class="hud-label">準心目標</span>
-      <span class="hud-val white" id="hud-target">前方走道</span>
-    </div>
-  </footer>
-</div>
-
-<!-- 互動視窗 -->
-<div id="modal-backdrop">
-  <div class="modal-card">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-title">標題</div>
-      <button class="modal-close" id="modal-close">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
-<script>
-(() => {
-  // =========================================================
-  // 1. 系統設定與試算表連線
-  // =========================================================
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxYlSNUXb_Lu2mslqN6TAwYUeSVyIfOpO8akA_kpsIbXgA3AAMe6iOc4M__o8XeA_nrag/exec";
-  const KOBE_LINE_ID = "satanhotdog";
-  const LINE_CONSULT_URL = `https://line.me/ti/p/~${KOBE_LINE_ID}`;
-
-  const MAP_SIZE = 40;
-  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v1";
-
-  const DEFAULT_ASSETS = [
-    { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 3, Category: "NPC", Name: "家具專員KOBE", File: "Kobe", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.65, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
-    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
-  ];
-
-  // =========================================================
-  // 2. 全域狀態管理
-  // =========================================================
-  const state = {
-    view: "3d", // "3d" | "2d"
-    mode: "browse", // "browse" | "game"
-    adminUnlocked: false,
-    editorTool: "place", // "place" | "move" | "erase"
-    editorCat: "NPC",
-    selectedAssetId: 1,
-    placeDir: 0, // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
-    movingObj: null,
-
-    assetsMap: new Map(),
-    assetsList: [],
-    promoProducts: [],
-    currentMarqueeItem: null,
-    skuCache: new Map(),
-
-    walls: Array.from({ length: MAP_SIZE }, () => Array(MAP_SIZE).fill(0)),
-    objects: [],
-
-    player: {
-      x: 20.5,
-      y: 34.5,
-      angle: -Math.PI / 2,
-      dir2d: 2,
-      path: []
-    },
-
-    cam2d: {
-      visibleTiles: 40,
-      centerX: 20,
-      centerY: 20
-    },
-
-    game: {
-      revenue: 0,
-      guests: [],
-      spawnTimer: 0
-    },
-
-    keys: { fwd: false, back: false, strafeL: false, strafeR: false, turnL: false, turnR: false },
-    lastTime: performance.now()
-  };
-
-  // =========================================================
-  // 3. 四向貼圖與多幀圖片快取引擎 (0 / 90 / 180 / 270)
-  // =========================================================
-  const imageCache = new Map();
-
-  function getSpriteImage(baseFile, angleSuffix = "", allowMirrorFallback = false) {
-    if (!baseFile) return null;
-    const key = `${baseFile}${angleSuffix}`;
-    if (imageCache.has(key)) {
-      const entry = imageCache.get(key);
-      if (entry.status === "loaded") return { img: entry.img, flipX: false };
-      if (entry.status === "error") {
-        if (angleSuffix === "_270" && allowMirrorFallback) {
-          const alt = getSpriteImage(baseFile, "_90", false);
-          if (alt) return { img: alt.img, flipX: true };
-        }
-        if (angleSuffix !== "") {
-          return getSpriteImage(baseFile, "", false);
-        }
-        return null;
-      }
-      return null;
-    }
-
-    const img = new Image();
-    const entry = { status: "loading", img };
-    imageCache.set(key, entry);
-
-    img.onload = () => {
-      entry.status = "loaded";
-      if (baseFile === "Kobe" && angleSuffix === "") {
-        document.getElementById("hud-kobe-img").src = img.src;
-      }
-    };
-    img.onerror = () => {
-      entry.status = "error";
-    };
-    img.src = `./${encodeURIComponent(key)}.png`;
-    return null;
-  }
-
-  function resolveAssetSprite(asset, relAngleRad, timeSec) {
-    if (!asset || !asset.File) return null;
-    const files = String(asset.File).split("|").map(s => s.trim()).filter(Boolean);
-    const fps = parseFloat(asset.FPS) || 1;
-    const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
-    const baseFile = files[frameIdx];
-
-    let suffix = "";
-    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360;
-    if (deg >= 45 && deg < 135) {
-      suffix = "_90";
-    } else if (deg >= 135 && deg < 225) {
-      suffix = "_180";
-    } else if (deg >= 225 && deg < 315) {
-      suffix = "_270";
-    }
-    return getSpriteImage(baseFile, suffix, true);
-  }
-
-  function preloadAllAssets() {
-    state.assetsList.forEach(a => {
-      const files = String(a.File || "").split("|").map(s => s.trim()).filter(Boolean);
-      files.forEach(f => {
-        getSpriteImage(f, "", false);
-        getSpriteImage(f, "_90", false);
-        getSpriteImage(f, "_180", false);
-        getSpriteImage(f, "_270", true);
-      });
-    });
-  }
-
-  // =========================================================
-  // 4. 建立 40×40 預設大墩店地圖
-  // =========================================================
-  function buildDefaultHolaMap() {
-    for (let y = 0; y < MAP_SIZE; y++) {
-      for (let x = 0; x < MAP_SIZE; x++) {
-        const isBorder = (x === 0 || x === MAP_SIZE - 1 || y === 0 || y === MAP_SIZE - 1);
-        const isMainDoor = (y === MAP_SIZE - 1 && x >= 18 && x <= 21);
-        state.walls[y][x] = (isBorder && !isMainDoor) ? 1 : 0;
-      }
-    }
-
-    let uidCounter = 1;
-    const place = (id, x, y, dir) => {
-      state.objects.push({ uid: uidCounter++, id, x, y, dir });
-    };
-
-    state.objects = [];
-
-    // ㄇ字型上翼橫向延伸櫃檯
-    place(21, 35, 20, 0);
-    place(21, 37, 20, 0);
-
-    // ㄇ字型前排直向主櫃檯
-    place(21, 35, 24, 3);
-    place(21, 35, 26, 3);
-    place(22, 35, 28, 3);
-    place(23, 35, 30, 3);
-    place(21, 35, 32, 3);
-
-    // ㄇ字型下翼橫向延伸櫃檯
-    place(21, 35, 34, 2);
-    place(21, 37, 34, 2);
-
-    // 櫃檯內側服務人員
-    place(1, 36, 24, 3); // 1號：金漸層貓服務人員（SKU查詢）
-    place(2, 36, 26, 3); // 2號：無毛貓服務人員（VIP盲盒）
-  }
-
-  function encodeMapData() {
-    return JSON.stringify({
-      v: 1,
-      size: MAP_SIZE,
-      objs: state.objects.map(o => [o.id, o.x, o.y, o.dir])
-    });
-  }
-
-  function decodeMapData(codeStr) {
-    if (!codeStr) return false;
-    try {
-      const parsed = JSON.parse(codeStr);
-      if (parsed && Array.isArray(parsed.objs)) {
-        buildDefaultHolaMap();
-        let uid = 1;
-        state.objects = parsed.objs
-          .filter(arr => Array.isArray(arr) && arr.length >= 4 && arr[0] !== 3)
-          .map(arr => ({
-            uid: uid++,
-            id: Number(arr[0]),
-            x: Number(arr[1]),
-            y: Number(arr[2]),
-            dir: Number(arr[3]) || 0
-          }));
-        return true;
-      }
-    } catch (e) {
-      console.warn("地圖解碼失敗，使用預設配置", e);
-    }
-    return false;
-  }
-
-  function getObjectBounds(obj) {
-    const asset = state.assetsMap.get(obj.id) || { W: 1, H: 1 };
-    const w = Math.max(1, parseInt(asset.W) || 1);
-    const h = Math.max(1, parseInt(asset.H) || 1);
-    const rotated = (obj.dir === 1 || obj.dir === 3);
-    const spanX = rotated ? h : w;
-    const spanY = rotated ? w : h;
-    return {
-      minX: obj.x,
-      maxX: obj.x + spanX - 1,
-      minY: obj.y,
-      maxY: obj.y + spanY - 1,
-      spanX,
-      spanY,
-      centerX: obj.x + spanX / 2,
-      centerY: obj.y + spanY / 2
-    };
-  }
-
-  function getObjectAt(gx, gy) {
-    for (let i = state.objects.length - 1; i >= 0; i--) {
-      const b = getObjectBounds(state.objects[i]);
-      if (gx >= b.minX && gx <= b.maxX && gy >= b.minY && gy <= b.maxY) {
-        return state.objects[i];
-      }
-    }
-    return null;
-  }
-
-  function isCellWalkable(gx, gy, ignoreUid = null) {
-    if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return false;
-    if (state.walls[gy][gx] === 1) return false;
-    const obj = getObjectAt(gx, gy);
-    if (obj && obj.uid !== ignoreUid) return false;
-    return true;
-  }
-
-  // =========================================================
-  // 5. 載入試算表資料（透過 GAS 後端直連，解決查詢卡住問題）
-  // =========================================================
-  function registerAssets(list) {
-    state.assetsMap.clear();
-    state.assetsList = [];
-    list.forEach(raw => {
-      const id = parseInt(raw.ID);
-      if (!id) return;
-      const item = {
-        ID: id,
-        Category: String(raw.Category || "Furniture").trim(),
-        Name: String(raw.Name || `物件#${id}`).trim(),
-        File: String(raw.File || "").trim(),
-        W: parseInt(raw.W) || 1,
-        H: parseInt(raw.H) || 1,
-        ScaleH: parseFloat(raw.ScaleH) || 1,
-        Dialog: String(raw.Dialog || "").trim(),
-        LineBtn: String(raw.LineBtn || "").trim().toUpperCase(),
-        Clicks: parseInt(raw.Clicks) || 0,
-        TransformID: parseInt(raw.TransformID) || 0,
-        Frames: parseInt(raw.Frames) || 1,
-        FPS: parseFloat(raw.FPS) || 1
-      };
-      state.assetsMap.set(id, item);
-      if (id !== 3) {
-        state.assetsList.push(item);
-      }
-    });
-    preloadAllAssets();
-    renderPalette();
-  }
-
-  async function queryProductsFromGAS(q) {
-    const key = q.trim().toLowerCase();
-    if (state.skuCache.has(key)) {
-      return state.skuCache.get(key);
-    }
-    const res = await fetch(`${GAS_URL}?action=searchSku&q=${encodeURIComponent(q.trim())}`);
-    const json = await res.json();
-    if (json && json.ok && Array.isArray(json.items)) {
-      state.skuCache.set(key, json.items);
-      return json.items;
-    }
-    return [];
-  }
-
-  async function initDataPipeline() {
-    registerAssets(DEFAULT_ASSETS);
-    buildDefaultHolaMap();
-
-    // 1. 讀取雲端 GAS (和樂宮3D素材 + 地圖配置3D)
-    try {
-      const res = await fetch(`${GAS_URL}?action=get3D`);
-      const json = await res.json();
-      if (json && json.ok) {
-        if (Array.isArray(json.assets) && json.assets.length > 0) {
-          const merged = new Map(DEFAULT_ASSETS.map(a => [a.ID, a]));
-          json.assets.forEach(a => {
-            const id = parseInt(a.ID);
-            if (id) merged.set(id, a);
-          });
-          registerAssets(Array.from(merged.values()));
-        }
-        if (json.mapData && json.mapData.code) {
-          decodeMapData(json.mapData.code);
-          localStorage.setItem(LOCAL_MAP_KEY, json.mapData.code);
-        } else {
-          const localCode = localStorage.getItem(LOCAL_MAP_KEY);
-          if (localCode) decodeMapData(localCode);
-        }
-      }
-    } catch (err) {
-      const localCode = localStorage.getItem(LOCAL_MAP_KEY);
-      if (localCode) decodeMapData(localCode);
-    }
-
-    // 2. 訪客流量統計 (+1)
-    try {
-      if (!sessionStorage.getItem("hola_3d_hit")) {
-        sessionStorage.setItem("hola_3d_hit", "1");
-        fetch(`${GAS_URL}?action=hit`).catch(() => {});
-      }
-    } catch (_) {}
-
-    // 3. 讀取頂部跑馬燈促銷商品
-    loadPromoMarquee();
-  }
-
-  async function loadPromoMarquee() {
-    try {
-      const res = await fetch(`${GAS_URL}?action=getPromos`);
-      const json = await res.json();
-      if (json && json.ok && Array.isArray(json.items) && json.items.length > 0) {
-        state.promoProducts = json.items;
-        rotateMarqueeItem();
-        return;
-      }
-    } catch (_) {}
-    document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
-  }
-
-  function formatPriceDisplay(val) {
-    if (!val) return "";
-    const num = Number(String(val).replace(/[^0-9.-]/g, ""));
-    if (!isNaN(num) && num > 0) return `$${num.toLocaleString()}`;
-    return String(val).startsWith("$") ? val : `$${val}`;
-  }
-
-  function rotateMarqueeItem() {
-    if (!state.promoProducts.length) return;
-    const item = state.promoProducts[Math.floor(Math.random() * state.promoProducts.length)];
-    state.currentMarqueeItem = item;
-    const priceStr = item.promoPrice
-      ? `特價 ${formatPriceDisplay(item.promoPrice)}`
-      : (item.price ? formatPriceDisplay(item.price) : "門市優惠中");
-    const tagStr = item.promoTag ? `【${item.promoTag}】` : "【精選推薦】";
-    const el = document.getElementById("marquee-text");
-    el.style.animation = "none";
-    el.offsetHeight;
-    el.textContent = `${tagStr} ${item.name}（SKU: ${item.sku}）— ${priceStr} ｜ 大墩庫存:${item.stock630 || 0} / 展示:${item.show630 || 0}（點擊查詢詳情）`;
-    el.style.animation = "marqueeScroll 20s linear infinite";
-  }
-  setInterval(rotateMarqueeItem, 20000);
-
-  // =========================================================
-  // 6. 3D 射線投射引擎
-  // =========================================================
-  const canvas = document.getElementById("main-canvas");
-  const ctx = canvas.getContext("2d");
-
-  function resizeCanvas() {
-    const wrap = document.getElementById("viewport-wrap");
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(wrap.clientWidth * dpr);
-    canvas.height = Math.floor(wrap.clientHeight * dpr);
-  }
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
-
-  function normalizeAngle(a) {
-    while (a > Math.PI) a -= Math.PI * 2;
-    while (a < -Math.PI) a += Math.PI * 2;
-    return a;
-  }
-
-  function render3D(timeSec) {
-    const W = canvas.width;
-    const H = canvas.height;
-    const halfH = H * 0.5;
-
-    const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
-    ceilGrad.addColorStop(0, "#14171d");
-    ceilGrad.addColorStop(1, "#262b35");
-    ctx.fillStyle = ceilGrad;
-    ctx.fillRect(0, 0, W, halfH);
-
-    const floorGrad = ctx.createLinearGradient(0, halfH, 0, H);
-    floorGrad.addColorStop(0, "#4b515c");
-    floorGrad.addColorStop(0.35, "#6b7280");
-    floorGrad.addColorStop(1, "#8b929e");
-    ctx.fillStyle = floorGrad;
-    ctx.fillRect(0, halfH, W, halfH);
-
-    const fov = Math.PI / 3;
-    const numRays = Math.min(W, 480);
-    const stripW = W / numRays;
-    const zBuffer = new Float32Array(numRays);
-
-    const px = state.player.x;
-    const py = state.player.y;
-    const pAngle = state.player.angle;
-
-    for (let i = 0; i < numRays; i++) {
-      const cameraX = (2 * i / numRays) - 1;
-      const rayAngle = pAngle + Math.atan(cameraX * Math.tan(fov / 2));
-      const rayDirX = Math.cos(rayAngle);
-      const rayDirY = Math.sin(rayAngle);
-
-      let mapX = Math.floor(px);
-      let mapY = Math.floor(py);
-
-      const deltaDistX = Math.abs(rayDirX) < 1e-6 ? 1e30 : Math.abs(1 / rayDirX);
-      const deltaDistY = Math.abs(rayDirY) < 1e-6 ? 1e30 : Math.abs(1 / rayDirY);
-
-      let stepX, stepY, sideDistX, sideDistY;
-      if (rayDirX < 0) {
-        stepX = -1;
-        sideDistX = (px - mapX) * deltaDistX;
-      } else {
-        stepX = 1;
-        sideDistX = (mapX + 1.0 - px) * deltaDistX;
-      }
-      if (rayDirY < 0) {
-        stepY = -1;
-        sideDistY = (py - mapY) * deltaDistY;
-      } else {
-        stepY = 1;
-        sideDistY = (mapY + 1.0 - py) * deltaDistY;
-      }
-
-      let hit = 0;
-      let side = 0;
-      let steps = 0;
-      while (hit === 0 && steps < 64) {
-        steps++;
-        if (sideDistX < sideDistY) {
-          sideDistX += deltaDistX;
-          mapX += stepX;
-          side = 0;
-        } else {
-          sideDistY += deltaDistY;
-          mapY += stepY;
-          side = 1;
-        }
-        if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) {
-          hit = 1;
-        } else if (state.walls[mapY][mapX] === 1) {
-          hit = 1;
-        }
-      }
-
-      const perpWallDist = side === 0 ? (sideDistX - deltaDistX) : (sideDistY - deltaDistY);
-      const safeDist = Math.max(0.05, perpWallDist);
-      zBuffer[i] = safeDist;
-
-      const lineH = H / safeDist;
-      const drawStart = halfH - lineH * 0.55;
-
-      const shade = Math.max(0.28, 1 - safeDist / 42) * (side === 1 ? 0.85 : 1);
-      const r = Math.floor(228 * shade);
-      const g = Math.floor(220 * shade);
-      const b = Math.floor(206 * shade);
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(i * stripW, drawStart, stripW + 0.8, lineH);
-
-      ctx.fillStyle = `rgb(${Math.floor(110 * shade)},${Math.floor(92 * shade)},${Math.floor(76 * shade)})`;
-      ctx.fillRect(i * stripW, drawStart + lineH * 0.92, stripW + 0.8, lineH * 0.08);
-    }
-
-    const renderList = [];
-
-    state.objects.forEach(obj => {
-      const asset = state.assetsMap.get(obj.id);
-      if (!asset) return;
-      const bounds = getObjectBounds(obj);
-      const dx = bounds.centerX - px;
-      const dy = bounds.centerY - py;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 0.25 || dist > 45) return;
-
-      const facingAngles = [Math.PI / 2, 0, -Math.PI / 2, Math.PI];
-      const objFacing = facingAngles[obj.dir] ?? (Math.PI / 2);
-      const vecToCam = Math.atan2(py - bounds.centerY, px - bounds.centerX);
-      const relAngle = normalizeAngle(vecToCam - objFacing);
-
-      const deg = ((relAngle * 180 / Math.PI) % 360 + 360) % 360;
-      const isSideView = (deg >= 45 && deg < 135) || (deg >= 225 && deg < 315);
-      const worldWidth = isSideView ? asset.H : asset.W;
-
-      renderList.push({
-        type: "obj",
-        obj,
-        asset,
-        cx: bounds.centerX,
-        cy: bounds.centerY,
-        dist,
-        relAngle,
-        worldWidth,
-        scaleH: asset.ScaleH || 1
-      });
-    });
-
-    if (state.mode === "game") {
-      state.game.guests.forEach(g => {
-        const dx = g.x - px;
-        const dy = g.y - py;
-        const dist = Math.hypot(dx, dy);
-        if (dist > 0.25 && dist < 40) {
-          renderList.push({
-            type: "guest",
-            guest: g,
-            cx: g.x,
-            cy: g.y,
-            dist,
-            worldWidth: 0.75,
-            scaleH: 0.92
-          });
-        }
-      });
-    }
-
-    renderList.sort((a, b) => b.dist - a.dist);
-
-    const dirX = Math.cos(pAngle);
-    const dirY = Math.sin(pAngle);
-    const planeLen = Math.tan(fov / 2);
-    const planeX = -dirY * planeLen;
-    const planeY = dirX * planeLen;
-    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
-
-    renderedHitboxes3D = [];
-
-    for (const item of renderList) {
-      const spriteX = item.cx - px;
-      const spriteY = item.cy - py;
-
-      const transformX = invDet * (dirY * spriteX - dirX * spriteY);
-      const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      if (transformY <= 0.15) continue;
-
-      const spriteScreenX = (W / 2) * (1 + transformX / transformY);
-      const baseUnitH = Math.abs(H / transformY);
-      const floorY = halfH + baseUnitH * 0.45;
-
-      if (item.type === "obj") {
-        const resolved = resolveAssetSprite(item.asset, item.relAngle, timeSec);
-        const drawH = baseUnitH * item.scaleH;
-        let drawW = baseUnitH * item.worldWidth;
-
-        if (resolved && resolved.img && item.asset.W === 1 && item.asset.H === 1) {
-          const aspect = resolved.img.width / Math.max(1, resolved.img.height);
-          drawW = drawH * aspect;
-        }
-
-        const leftX = spriteScreenX - drawW / 2;
-        const topY = floorY - drawH;
-
-        const sampleRays = [spriteScreenX, leftX + drawW * 0.2, leftX + drawW * 0.8]
-          .map(sx => Math.floor((sx / W) * numRays))
-          .filter(idx => idx >= 0 && idx < numRays);
-        const visible = sampleRays.some(idx => transformY < zBuffer[idx] + 0.35);
-        if (!visible) continue;
-
-        if (resolved && resolved.img) {
-          ctx.save();
-          if (resolved.flipX) {
-            ctx.translate(spriteScreenX, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(resolved.img, -drawW / 2, topY, drawW, drawH);
-          } else {
-            ctx.drawImage(resolved.img, leftX, topY, drawW, drawH);
-          }
-          ctx.restore();
-        } else {
-          ctx.fillStyle = item.asset.Category === "NPC" ? "#f59e0b" : "#8d6e63";
-          ctx.fillRect(leftX, topY, drawW, drawH);
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(leftX, topY, drawW, drawH);
-          ctx.fillStyle = "#fff";
-          ctx.font = `bold ${Math.max(11, Math.floor(drawH * 0.14))}px sans-serif`;
-          ctx.textAlign = "center";
-          ctx.fillText(`#${item.asset.ID} ${item.asset.Name}`, spriteScreenX, topY + drawH * 0.52);
-        }
-
-        renderedHitboxes3D.push({
-          left: leftX,
-          right: leftX + drawW,
-          top: topY,
-          bottom: floorY,
-          obj: item.obj
-        });
-      } else if (item.type === "guest") {
-        const drawH = baseUnitH * 0.9;
-        const drawW = drawH * 0.55;
-        const leftX = spriteScreenX - drawW / 2;
-        const topY = floorY - drawH;
-        const rayIdx = Math.floor((spriteScreenX / W) * numRays);
-        if (rayIdx >= 0 && rayIdx < numRays && transformY < zBuffer[rayIdx] + 0.2) {
-          drawPixelGuest3D(ctx, leftX, topY, drawW, drawH, item.guest);
-        }
-      }
-    }
-
-    updateCrosshairTarget();
-  }
-
-  let renderedHitboxes3D = [];
-
-  function drawPixelGuest3D(ctx, x, y, w, h, guest) {
-    ctx.save();
-    ctx.fillStyle = guest.color;
-    ctx.fillRect(x + w * 0.2, y + h * 0.35, w * 0.6, h * 0.45);
-    ctx.fillStyle = "#fde68a";
-    ctx.fillRect(x + w * 0.25, y + h * 0.08, w * 0.5, h * 0.27);
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(x + w * 0.25, y + h * 0.8, w * 0.2, h * 0.2);
-    ctx.fillRect(x + w * 0.55, y + h * 0.8, w * 0.2, h * 0.2);
-    ctx.fillStyle = "rgba(0,0,0,0.75)";
-    ctx.fillRect(x, y - 22, w, 18);
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(guest.state === "queue" ? "💳待結帳" : "🛍️逛展間", x + w / 2, y - 9);
-    ctx.restore();
-  }
-
-  // =========================================================
-  // 7. 2D 平面地圖渲染
-  // =========================================================
-  function get2DTransform() {
-    const W = canvas.width;
-    const H = canvas.height;
-    const minSide = Math.min(W, H);
-    const tilePx = minSide / state.cam2d.visibleTiles;
-    const offsetX = W / 2 - state.cam2d.centerX * tilePx;
-    const offsetY = H / 2 - state.cam2d.centerY * tilePx;
-    return { tilePx, offsetX, offsetY };
-  }
-
-  function render2D() {
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.fillStyle = "#11141a";
-    ctx.fillRect(0, 0, W, H);
-
-    const { tilePx, offsetX, offsetY } = get2DTransform();
-
-    for (let y = 0; y < MAP_SIZE; y++) {
-      for (let x = 0; x < MAP_SIZE; x++) {
-        const sx = offsetX + x * tilePx;
-        const sy = offsetY + y * tilePx;
-        if (sx + tilePx < 0 || sx > W || sy + tilePx < 0 || sy > H) continue;
-
-        if (state.walls[y][x] === 1) {
-          ctx.fillStyle = "#5c4d42";
-          ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
-        } else {
-          ctx.fillStyle = ((x + y) % 2 === 0) ? "#d8dce3" : "#cfd5de";
-          ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
-          if (tilePx >= 10) {
-            ctx.strokeStyle = "rgba(0,0,0,0.08)";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(sx, sy, tilePx, tilePx);
-          }
-        }
-      }
-    }
-
-    const doorX = offsetX + 18 * tilePx;
-    const doorY = offsetY + 39 * tilePx;
-    ctx.fillStyle = "rgba(34, 197, 94, 0.35)";
-    ctx.fillRect(doorX, doorY, 4 * tilePx, tilePx);
-
-    state.objects.forEach(obj => {
-      const asset = state.assetsMap.get(obj.id);
-      if (!asset) return;
-      const b = getObjectBounds(obj);
-      const sx = offsetX + b.minX * tilePx;
-      const sy = offsetY + b.minY * tilePx;
-      const sw = b.spanX * tilePx;
-      const sh = b.spanY * tilePx;
-
-      ctx.fillStyle = asset.Category === "NPC" ? "rgba(245, 158, 11, 0.25)" : "rgba(56, 189, 248, 0.22)";
-      ctx.fillRect(sx + 1, sy + 1, sw - 2, sh - 2);
-      ctx.strokeStyle = (state.movingObj && state.movingObj.uid === obj.uid) ? "#ef4444" : "rgba(15, 23, 42, 0.45)";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
-
-      const suffixes = ["", "_90", "_180", "_270"];
-      const baseFile = String(asset.File || "").split("|")[0].trim();
-      const spr = getSpriteImage(baseFile, suffixes[obj.dir] || "", true);
-      if (spr && spr.img) {
-        ctx.save();
-        if (spr.flipX) {
-          ctx.translate(sx + sw / 2, 0);
-          ctx.scale(-1, 1);
-          ctx.drawImage(spr.img, -sw / 2, sy, sw, sh);
-        } else {
-          ctx.drawImage(spr.img, sx, sy, sw, sh);
-        }
-        ctx.restore();
-      } else if (tilePx >= 14) {
-        ctx.fillStyle = "#111827";
-        ctx.font = `bold ${Math.max(9, Math.floor(tilePx * 0.35))}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.fillText(`#${asset.ID}`, sx + sw / 2, sy + sh / 2 + 3);
-      }
-
-      if (tilePx >= 16) {
-        const arrows = ["↓", "→", "↑", "←"];
-        ctx.fillStyle = "#dc2626";
-        ctx.font = "bold 11px sans-serif";
-        ctx.fillText(arrows[obj.dir] || "↓", sx + sw - 7, sy + 10);
-      }
-    });
-
-    if (state.mode === "game") {
-      state.game.guests.forEach(g => {
-        const gx = offsetX + g.x * tilePx;
-        const gy = offsetY + g.y * tilePx;
-        ctx.fillStyle = g.color;
-        ctx.beginPath();
-        ctx.arc(gx, gy, Math.max(4, tilePx * 0.32), 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#fff";
-        ctx.stroke();
-      });
-    }
-
-    const kx = offsetX + state.player.x * tilePx;
-    const ky = offsetY + state.player.y * tilePx;
-    const kSize = Math.max(16, tilePx * 1.15);
-    const kSuffixes = ["", "_90", "_180", "_270"];
-    const kSpr = getSpriteImage("Kobe", kSuffixes[state.player.dir2d] || "", true);
-    if (kSpr && kSpr.img) {
-      ctx.save();
-      if (kSpr.flipX) {
-        ctx.translate(kx, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(kSpr.img, -kSize / 2, ky - kSize / 2, kSize, kSize);
-      } else {
-        ctx.drawImage(kSpr.img, kx - kSize / 2, ky - kSize / 2, kSize, kSize);
-      }
-      ctx.restore();
-    } else {
-      ctx.fillStyle = "#38bdf8";
-      ctx.beginPath();
-      ctx.arc(kx, ky, tilePx * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.strokeStyle = "#f59e0b";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(kx, ky);
-    ctx.lineTo(kx + Math.cos(state.player.angle) * tilePx * 0.9, ky + Math.sin(state.player.angle) * tilePx * 0.9);
-    ctx.stroke();
-  }
-
-  // =========================================================
-  // 8. 互動邏輯（隔櫃穿透偵測 + POS 機前服務連動 + SKU 查詢 + VIP 盲盒提案卡）
-  // =========================================================
-  function findTargetObjectAhead() {
-    const px = state.player.x;
-    const py = state.player.y;
-    const cos = Math.cos(state.player.angle);
-    const sin = Math.sin(state.player.angle);
-
-    let frontObj = null;
-    for (const d of [0.75, 1.2, 1.55]) {
-      const gx = Math.floor(px + cos * d);
-      const gy = Math.floor(py + sin * d);
-      const found = getObjectAt(gx, gy);
-      if (found) {
-        frontObj = found;
-        break;
-      }
-    }
-
-    if (!frontObj) return { obj: null, behindNpc: null };
-
-    const frontAsset = state.assetsMap.get(frontObj.id);
-    if (frontAsset && (frontAsset.Category === "Store" || [21, 22, 23].includes(frontObj.id))) {
-      for (const d of [1.8, 2.3, 2.8]) {
-        const gx = Math.floor(px + cos * d);
-        const gy = Math.floor(py + sin * d);
-        const behind = getObjectAt(gx, gy);
-        if (behind && behind.uid !== frontObj.uid) {
-          const bAsset = state.assetsMap.get(behind.id);
-          if (bAsset && bAsset.Category === "NPC") {
-            return { obj: frontObj, behindNpc: behind };
-          }
-        }
-      }
-    }
-
-    return { obj: frontObj, behindNpc: null };
-  }
-
-  function updateCrosshairTarget() {
-    const targetEl = document.getElementById("hud-target");
-    const { obj, behindNpc } = findTargetObjectAhead();
-    if (behindNpc) {
-      const a = state.assetsMap.get(behindNpc.id);
-      targetEl.textContent = a ? a.Name : "服務人員";
-    } else if (obj) {
-      const a = state.assetsMap.get(obj.id);
-      targetEl.textContent = a ? a.Name : `物件#${obj.id}`;
-    } else {
-      targetEl.textContent = "前方走道";
-    }
-  }
-
-  function triggerInteraction(specificObj = null) {
-    let targetObj = specificObj;
-    let behindNpc = null;
-
-    if (!targetObj) {
-      const res = findTargetObjectAhead();
-      targetObj = res.obj;
-      behindNpc = res.behindNpc;
-    }
-
-    if (!targetObj) {
-      showPA("前方沒有可互動的商品或服務人員，請靠近櫃檯再試。");
-      return;
-    }
-
-    const effectiveObj = behindNpc || targetObj;
-    const asset = state.assetsMap.get(effectiveObj.id);
-    if (!asset) return;
-
-    if (asset.ID === 1) {
-      openSkuModal();
-      return;
-    }
-
-    if (asset.ID === 2) {
-      openBlindBoxModal();
-      return;
-    }
-
-    if (asset.ID === 22 || asset.ID === 23) {
-      if (state.mode === "game") {
-        const qIdx = state.game.guests.findIndex(g => g.state === "queue");
-        if (qIdx !== -1) {
-          const served = state.game.guests.splice(qIdx, 1)[0];
-          const bonus = Math.round(served.spend * 1.1);
-          state.game.revenue += bonus;
-          updateHudStatus();
-          showPA(`💰 親自在 POS 櫃檯結帳完成！獲得 VIP 加成營收 $${bonus.toLocaleString()}`);
-        } else {
-          showPA("目前 POS 櫃檯沒有排隊結帳的顧客。");
-        }
-      } else {
-        openCounterConciergeModal(asset.Name);
-      }
-      return;
-    }
-
-    if (asset.ID === 21) {
-      openCounterConciergeModal(asset.Name);
-      return;
-    }
-
-    openGenericAssetModal(asset);
-  }
-
-  // =========================================================
-  // 9. 互動視窗內容
-  // =========================================================
-  function openModal(title, html) {
-    document.getElementById("modal-title").innerHTML = title;
-    document.getElementById("modal-body").innerHTML = html;
-    document.getElementById("modal-backdrop").classList.add("show");
-  }
-
-  function closeModal() {
-    document.getElementById("modal-backdrop").classList.remove("show");
-  }
-  document.getElementById("modal-close").addEventListener("click", closeModal);
-  document.getElementById("modal-backdrop").addEventListener("click", (e) => {
-    if (e.target.id === "modal-backdrop") closeModal();
-  });
-
-  function openCounterConciergeModal(counterName) {
-    openModal(`🛎️ ${counterName}`, `
-      <p style="margin-top:0;color:#d1d5db;">歡迎來到 HOLA 大墩店服務收銀區！您想辦理哪一項服務？</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn-action" id="quick-sku-btn">🐱 找金漸層貓（查詢商品價格與即時庫存）</button>
-        <button class="btn-action secondary" id="quick-box-btn">🐈 找無毛貓（開啟 60 天 VIP 專屬盲盒）</button>
-        <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 加家具專員 KOBE LINE 線上諮詢</a>
-      </div>
-    `);
-    document.getElementById("quick-sku-btn").onclick = () => openSkuModal();
-    document.getElementById("quick-box-btn").onclick = openBlindBoxModal;
-  }
-
-  // ID 1 金漸層貓：透過 GAS 直連《商品全資料》即時查詢
-  function openSkuModal(prefillSku = "") {
-    const asset = state.assetsMap.get(1);
-    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵～歡迎光臨 HOLA 大墩店！輸入商品 SKU 貨號或品名關鍵字，我立刻幫您查價格與店內庫存！";
-    openModal(`🐱 金漸層貓服務人員 — 商品查詢`, `
-      <div class="npc-speech">
-        <img src="./Golden.png" alt="金漸層貓" />
-        <div>${speech}</div>
-      </div>
-      <div class="input-group">
-        <input type="text" id="sku-query-input" placeholder="輸入 SKU（例如 014092932）或商品名稱" value="${prefillSku}" />
-        <button class="btn-action" id="sku-search-btn">查詢</button>
-      </div>
-      <div id="sku-result-area"></div>
-      <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 傳送商品給 KOBE 專員保留 / 報價</a>
-    `);
-
-    const runSearch = async () => {
-      const q = document.getElementById("sku-query-input").value.trim();
-      const area = document.getElementById("sku-result-area");
-      if (!q) {
-        area.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入 SKU 貨號或商品關鍵字喔！</div>`;
-        return;
-      }
-
-      area.innerHTML = `<div style="color:#38bdf8;font-size:13px;padding:6px 0;">⏳ 正在連線試算表查詢「${q}」...</div>`;
-
-      try {
-        const matches = await queryProductsFromGAS(q);
-        if (!matches.length) {
-          area.innerHTML = `
-            <div class="sku-result-box">
-              <div style="color:#fca5a5;font-weight:700;">試算表《商品全資料》查無「${q}」</div>
-              <div style="margin-top:6px;font-size:12px;color:#9ca3af;">請確認 SKU 是否正確，或點擊下方前往官網查看：</div>
-              <a href="https://www.hola.com.tw/p/${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#38bdf8;font-weight:700;">🔗 前往 HOLA 官網查看 /p/${q}</a>
-            </div>
-          `;
-          return;
-        }
-
-        area.innerHTML = matches.map(p => {
-          const origPriceStr = formatPriceDisplay(p.price) || "-";
-          const promoPriceStr = formatPriceDisplay(p.promoPrice);
-          return `
-            <div class="sku-result-box">
-              <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">${p.name}</div>
-              <div class="sku-row"><span>SKU 貨號</span><strong>${p.sku}</strong></div>
-              <div class="sku-row"><span>原價 / 特價</span><strong>${origPriceStr} / <span style="color:#4ade80;">${promoPriceStr || "依門市為準"}</span></strong></div>
-              <div class="sku-row"><span>大墩店(630) 庫存 / 展示</span><strong>${p.stock630 || 0} 件 / ${p.show630 || 0} 件</strong></div>
-              <div class="sku-row"><span>楊梅總倉可用</span><strong>${p.stockYM || 0} 件</strong></div>
-              ${p.promoTag ? `<div class="sku-row"><span>促銷檔期</span><strong style="color:#fb923c;">${p.promoTag}</strong></div>` : ""}
-              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
-                <button class="btn-action secondary" style="padding:5px 9px;font-size:12px;" onclick="window.__openExclusiveCardBySku('${p.sku.replace(/'/g, "")}')">🎁 生成專屬提案卡</button>
-                <a href="https://www.hola.com.tw/p/${encodeURIComponent(p.sku)}" target="_blank" rel="noopener" style="color:#38bdf8;font-size:12px;font-weight:700;">🔗 官網商品頁</a>
-              </div>
-            </div>
-          `;
-        }).join("");
-      } catch (err) {
-        area.innerHTML = `<div style="color:#fca5a5;font-size:13px;">⚠️ 查詢連線異常，請確認網路後再試一次。</div>`;
-      }
-    };
-
-    document.getElementById("sku-search-btn").onclick = runSearch;
-    document.getElementById("sku-query-input").addEventListener("keydown", e => {
-      if (e.key === "Enter") runSearch();
-    });
-    if (prefillSku) runSearch();
-  }
-
-  // ID 2 無毛貓：60 天 VIP 盲盒鑄造器（生成圖三 HOLA EXCLUSIVE 專屬提案卡連結）
-  function openBlindBoxModal() {
-    const asset = state.assetsMap.get(2);
-    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造效期 60 天的「HOLA EXCLUSIVE 專屬家具提案盲盒」連結！";
-    openModal(`🐈 無毛貓服務人員 — 60天 VIP 盲盒`, `
-      <div class="npc-speech">
-        <img src="./Hairless.png" alt="無毛貓" />
-        <div>${speech}</div>
-      </div>
-      <div class="input-group">
-        <input type="text" id="blindbox-sku-input" placeholder="輸入商品 SKU（例如 014092932）" />
-        <button class="btn-action" id="blindbox-mint-btn">🎁 生成盲盒</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <input type="text" id="blindbox-custom-price" placeholder="選填：自訂專屬優惠價（留空自動抓試算表）" style="flex:1;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;user-select:text;" />
-      </div>
-      <div style="margin-bottom:8px;">
-        <input type="text" id="blindbox-note-input" placeholder="選填：給貴賓的專屬提案備註" style="width:100%;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;user-select:text;" />
-      </div>
-      <div id="blindbox-output"></div>
-    `);
-
-    document.getElementById("blindbox-mint-btn").onclick = async () => {
-      const sku = document.getElementById("blindbox-sku-input").value.trim();
-      const customPrice = document.getElementById("blindbox-custom-price").value.trim();
-      const note = document.getElementById("blindbox-note-input").value.trim();
-      const out = document.getElementById("blindbox-output");
-
-      if (!sku) {
-        out.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入要裝進盲盒的 SKU 貨號！</div>`;
-        return;
-      }
-
-      out.innerHTML = `<div style="color:#38bdf8;font-size:13px;padding:6px 0;">⏳ 正在讀取商品資料並鑄造 60 天盲盒...</div>`;
-
-      let matchedProduct = null;
-      try {
-        const list = await queryProductsFromGAS(sku);
-        matchedProduct = list.find(p => p.sku.toLowerCase() === sku.toLowerCase()) || list[0] || null;
-      } catch (_) {}
-
-      const payload = {
-        s: matchedProduct ? matchedProduct.sku : sku,
-        nm: matchedProduct ? matchedProduct.name : "",
-        pr: customPrice || (matchedProduct ? (matchedProduct.promoPrice || matchedProduct.price) : ""),
-        st: matchedProduct ? (matchedProduct.stockYM || matchedProduct.stock630 || "0") : "",
-        n: note,
-        t: Date.now()
-      };
-
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      const shareUrl = `${location.origin}${location.pathname}?box=${encodeURIComponent(encoded)}`;
-
-      out.innerHTML = `
-        <div class="blindbox-unbox-stage" style="padding:14px 10px;">
-          <div style="font-size:24px;">🎁✨</div>
-          <div style="font-weight:800;color:#fde68a;margin:4px 0;">${payload.nm || "SKU: " + payload.s}</div>
-          <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">客人點開連結後，將拆開「HOLA EXCLUSIVE 您的專屬家具提案」盲盒：</div>
-          <input type="text" readonly value="${shareUrl}" id="blindbox-url-field" style="width:100%;background:#0d1015;border:1px solid #4b5563;color:#38bdf8;padding:6px 8px;border-radius:6px;font-size:11px;margin-bottom:8px;user-select:all;" />
-          <div style="display:flex;gap:6px;justify-content:center;">
-            <button class="btn-action" id="copy-box-btn">📋 複製盲盒連結</button>
-            <button class="btn-action secondary" id="preview-box-btn">👀 預覽盲盒卡片</button>
-          </div>
-        </div>
-      `;
-
-      document.getElementById("copy-box-btn").onclick = () => {
-        const field = document.getElementById("blindbox-url-field");
-        field.select();
-        navigator.clipboard?.writeText(shareUrl);
-        showPA("✅ 專屬提案盲盒連結已複製，可直接傳到 LINE 給客人！");
-      };
-      document.getElementById("preview-box-btn").onclick = () => renderExclusiveProposalCard(payload);
-    };
-  }
-
-  // 直接開啟圖三樣式的【HOLA EXCLUSIVE 您的專屬家具提案】卡片
-  async function renderExclusiveProposalCard(payload) {
-    const daysLeft = Math.max(0, Math.ceil((payload.t + 60 * 86400000 - Date.now()) / 86400000));
-    if (daysLeft <= 0) {
-      openModal("🎁 VIP 專屬提案已過期", `<p>此組專屬家具提案連結已超過 60 天效期，歡迎聯絡大墩店家具顧問 <strong>蔡先生 (KOBE)</strong>（LINE ID: <code>${KOBE_LINE_ID}</code>）領取最新優惠！</p>`);
-      return;
-    }
-
-    // 即時向試算表確認最新品名、價格與倉庫庫存
-    let liveProduct = null;
-    try {
-      const list = await queryProductsFromGAS(payload.s);
-      liveProduct = list.find(p => p.sku.toLowerCase() === payload.s.toLowerCase()) || list[0] || null;
-    } catch (_) {}
-
-    const skuDisplay = (liveProduct && liveProduct.sku) ? liveProduct.sku : payload.s;
-    const nameDisplay = (liveProduct && liveProduct.name) ? liveProduct.name : (payload.nm || `精選推薦家具 (SKU: ${skuDisplay})`);
-    const rawPrice = payload.pr || (liveProduct ? (liveProduct.promoPrice || liveProduct.price) : "");
-    const priceDisplay = formatPriceDisplay(rawPrice) || "門市專屬禮遇價";
-
-    // 庫存數量顯示（優先顯示倉庫可用或大墩庫存）
-    let stockNum = "0";
-    if (liveProduct) {
-      const ym = parseInt(liveProduct.stockYM) || 0;
-      const d630 = parseInt(liveProduct.stock630) || 0;
-      stockNum = String(ym > 0 ? ym : d630);
-    } else if (payload.st) {
-      stockNum = payload.st;
-    }
-
-    const noteHtml = payload.n
-      ? `<div class="exclusive-note-box">💡 顧問專屬備註：${payload.n}</div>`
-      : "";
-
-    openModal(`🎁 HOLA 專屬家具提案`, `
-      <div class="exclusive-proposal-card">
-        <div class="exclusive-banner">
-          <div class="brand-en">HOLA EXCLUSIVE</div>
-          <div class="brand-zh">您的專屬家具提案</div>
-        </div>
-        <div class="exclusive-body">
-          <div class="exclusive-sku">SKU: ${skuDisplay}</div>
-          <div class="exclusive-name">${nameDisplay}</div>
-
-          <div class="exclusive-price-box">
-            <div class="lbl">專屬優惠價</div>
-            <div class="val">${priceDisplay}</div>
-          </div>
-
-          <div class="exclusive-stock-pill">
-            📦 現有倉庫庫存數量：${stockNum} 件
-          </div>
-
-          ${noteHtml}
-
-          <div class="exclusive-fineprint">
-            此報價單由您的專屬家具顧問提供，連結內含安全保護機制，將於 60 天後自動失效（目前剩餘 <strong>${daysLeft}</strong> 天）。<br />
-            ※ 結帳價格以門市當下檔期活動與系統定價為準；若庫存數量顯示為 0，請直接與顧問聯繫。
-          </div>
-
-          <div class="exclusive-advisor">
-            ✨ 現場鑑賞與專屬優惠，請指名大墩店家具顧問 <strong>蔡先生 (KOBE)</strong>。<br />
-            諮詢/保留請加 LINE ID: <strong>${KOBE_LINE_ID}</strong>
-          </div>
-
-          <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">
-            💬 點擊加 KOBE 的 LINE 諮詢 / 保留
-          </a>
-          <div class="exclusive-subhint">(點擊自動開啟 LINE，或手動搜尋 ID：${KOBE_LINE_ID})</div>
-        </div>
-      </div>
-    `);
-  }
-
-  window.__openExclusiveCardBySku = (sku) => {
-    renderExclusiveProposalCard({ s: sku, t: Date.now() });
-  };
-
-  // 當客人貼上盲盒網址進入網頁時：先顯示拆盲盒驚喜畫面，點擊後直接展開圖三專屬提案卡
-  function checkIncomingBlindBox() {
-    const params = new URLSearchParams(location.search);
-    const boxParam = params.get("box");
-    if (!boxParam) return;
-    try {
-      const decoded = JSON.parse(decodeURIComponent(escape(atob(boxParam))));
-      if (decoded && decoded.s) {
-        setTimeout(() => {
-          openModal("🎁 您收到一份 HOLA 大墩店 VIP 盲盒！", `
-            <div class="blindbox-unbox-stage">
-              <div style="font-size:44px;margin-bottom:6px;">🎁✨</div>
-              <div style="font-size:16px;font-weight:800;color:#fde68a;margin-bottom:6px;">
-                大墩店家具顧問 蔡先生 (KOBE)<br/>為您準備了一份專屬家具提案盲盒！
-              </div>
-              <div style="font-size:12px;color:#d1d5db;margin-bottom:14px;">
-                點擊下方按鈕立即拆開，查看專屬優惠價與即時庫存
-              </div>
-              <button class="btn-action" id="btn-unbox-now" style="width:100%;padding:12px;font-size:15px;">
-                ✨ 點擊拆開專屬提案盲盒
-              </button>
-            </div>
-          `);
-          document.getElementById("btn-unbox-now").onclick = () => renderExclusiveProposalCard(decoded);
-        }, 450);
-      }
-    } catch (_) {}
-  }
-
-  document.getElementById("promo-marquee").addEventListener("click", () => {
-    if (state.currentMarqueeItem) {
-      openSkuModal(state.currentMarqueeItem.sku);
-    } else {
-      openSkuModal();
-    }
-  });
-
-  function openGenericAssetModal(asset) {
-    const baseFile = String(asset.File || "").split("|")[0].trim();
-    const imgHtml = baseFile ? `<img src="./${encodeURIComponent(baseFile)}.png" alt="${asset.Name}" onerror="this.style.display='none'" />` : "";
-    const dialog = asset.Dialog || `這是「${asset.Name}」（編號 #${asset.ID}）。歡迎在 3D 展間繞行觀看各個角度！`;
-    const lineHtml = asset.LineBtn === "TRUE" ? `<a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 加 KOBE 專員 LINE 諮詢</a>` : "";
-
-    openModal(`🏷️ ${asset.Name}`, `
-      <div class="npc-speech">
-        ${imgHtml}
-        <div>${dialog}</div>
-      </div>
-      ${lineHtml}
-    `);
-  }
-
-  // =========================================================
-  // 10. 模式切換（3D逛逛 / 遊戲模式）與視角切換（3D / 2D）
-  // =========================================================
-  const btnToggleGame = document.getElementById("btn-toggle-game");
-  const btnToggleView = document.getElementById("btn-toggle-view");
-  const modeBadge = document.getElementById("mode-badge");
-
-  btnToggleGame.addEventListener("click", () => {
-    if (state.mode === "browse") {
-      state.mode = "game";
-      btnToggleGame.textContent = "🏪 返回 3D 逛逛";
-      btnToggleGame.classList.remove("primary");
-      modeBadge.textContent = "遊戲營業中";
-      modeBadge.classList.add("game");
-      showPA("🔔 HOLA 大墩店開始營業！AI 顧客進店挑選並前往雙收銀台排隊！");
-    } else {
-      state.mode = "browse";
-      state.game.guests = [];
-      btnToggleGame.textContent = "🎮 進入遊戲模式";
-      btnToggleGame.classList.add("primary");
-      modeBadge.textContent = "3D逛逛";
-      modeBadge.classList.remove("game");
-      showPA("✨ 已切換回純淨 3D 虛擬展間導覽模式。");
-    }
-    updateHudStatus();
-  });
-
-  btnToggleView.addEventListener("click", () => {
-    if (state.view === "3d") {
-      state.view = "2d";
-      state.cam2d.centerX = state.player.x;
-      state.cam2d.centerY = state.player.y;
-      btnToggleView.textContent = "🏛️ 返回 3D";
-      btnToggleView.classList.add("active-view");
-      document.getElementById("controls-3d").style.display = "none";
-      document.getElementById("crosshair").style.display = "none";
-      document.getElementById("zoom-bar-2d").classList.add("show");
-      document.getElementById("admin-unlock-btn").classList.add("show");
-      if (state.adminUnlocked) {
-        document.getElementById("builder-panel").classList.add("show");
-      }
-    } else {
-      state.view = "3d";
-      state.movingObj = null;
-      btnToggleView.textContent = "🗺️ 2D地圖";
-      btnToggleView.classList.remove("active-view");
-      document.getElementById("controls-3d").style.display = "block";
-      document.getElementById("crosshair").style.display = "block";
-      document.getElementById("zoom-bar-2d").classList.remove("show");
-      document.getElementById("admin-unlock-btn").classList.remove("show");
-      document.getElementById("builder-panel").classList.remove("show");
-    }
-  });
-
-  function updateHudStatus() {
-    const l1 = document.getElementById("hud-lbl-1");
-    const v1 = document.getElementById("hud-val-1");
-    const l2 = document.getElementById("hud-lbl-2");
-    const v2 = document.getElementById("hud-val-2");
-
-    if (state.mode === "game") {
-      l1.textContent = "今日營收";
-      v1.textContent = `$${state.game.revenue.toLocaleString()}`;
-      l2.textContent = "店內 / 排隊";
-      const totalG = state.game.guests.length;
-      const queueG = state.game.guests.filter(g => g.state === "queue").length;
-      v2.textContent = `${totalG}逛 / ${queueG}排`;
-    } else {
-      l1.textContent = "展間模式";
-      v1.textContent = "自由巡店";
-      l2.textContent = "櫃檯服務";
-      v2.textContent = "查詢 / 盲盒";
-    }
-  }
-
-  let paTimer = null;
-  function showPA(msg) {
-    const el = document.getElementById("pa-banner");
-    el.textContent = msg;
-    el.classList.add("show");
-    clearTimeout(paTimer);
-    paTimer = setTimeout(() => el.classList.remove("show"), 3600);
-  }
-
-  // =========================================================
-  // 11. 2D 裝潢編輯器（密碼 0816 + 五段縮放 + 放置/搬家/旋轉/移除 + 雲端保存）
-  // =========================================================
-  document.getElementById("admin-unlock-btn").addEventListener("click", () => {
-    if (state.adminUnlocked) {
-      const panel = document.getElementById("builder-panel");
-      panel.classList.toggle("show");
-      return;
-    }
-    const pwd = prompt("請輸入管理員密碼以開啟 2D 裝潢編輯：");
-    if (pwd === "0816") {
-      state.adminUnlocked = true;
-      document.getElementById("admin-unlock-btn").textContent = "🛠️ 裝潢面板";
-      document.getElementById("builder-panel").classList.add("show");
-      showPA("🔓 已解鎖 2D 裝潢編輯模式！點選格線可放置或搬移商品。");
-    } else if (pwd !== null) {
-      alert("密碼錯誤！");
-    }
-  });
-
-  document.querySelectorAll(".zoom-chip").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".zoom-chip").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      state.cam2d.visibleTiles = parseInt(btn.dataset.grid) || 40;
-      if (state.cam2d.visibleTiles === 40) {
-        state.cam2d.centerX = 20;
-        state.cam2d.centerY = 20;
-      } else {
-        state.cam2d.centerX = state.player.x;
-        state.cam2d.centerY = state.player.y;
-      }
-    });
-  });
-
-  document.querySelectorAll(".tool-btn[data-tool]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      state.editorTool = btn.dataset.tool;
-      state.movingObj = null;
-    });
-  });
-
-  const DIR_LABELS = ["0°正面", "90°朝右", "180°背面", "270°朝左"];
-  document.getElementById("btn-rotate-dir").addEventListener("click", () => {
-    state.placeDir = (state.placeDir + 1) % 4;
-    document.getElementById("btn-rotate-dir").textContent = `🔄 方向: ${DIR_LABELS[state.placeDir]}`;
-    if (state.movingObj) {
-      state.movingObj.dir = state.placeDir;
-    }
-  });
-
-  document.querySelectorAll(".cat-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      state.editorCat = tab.dataset.cat;
-      renderPalette();
-    });
-  });
-
-  function renderPalette() {
-    const strip = document.getElementById("palette-strip");
-    const items = state.assetsList.filter(a => a.Category.toLowerCase() === state.editorCat.toLowerCase());
-    if (!items.length) {
-      strip.innerHTML = `<div style="font-size:12px;color:#9ca3af;padding:8px;">此分類尚無素材，請於試算表【和樂宮3D素材】新增。</div>`;
-      return;
-    }
-    if (!items.some(i => i.ID === state.selectedAssetId)) {
-      state.selectedAssetId = items[0].ID;
-    }
-    strip.innerHTML = items.map(item => {
-      const baseFile = String(item.File || "").split("|")[0].trim();
-      const selected = item.ID === state.selectedAssetId ? "selected" : "";
-      return `
-        <div class="palette-item ${selected}" data-id="${item.ID}">
-          <img src="./${encodeURIComponent(baseFile)}.png" alt="${item.Name}" onerror="this.style.opacity=0.25" />
-          <span>#${item.ID} ${item.Name}</span>
-        </div>
-      `;
-    }).join("");
-
-    strip.querySelectorAll(".palette-item").forEach(el => {
-      el.addEventListener("click", () => {
-        state.selectedAssetId = parseInt(el.dataset.id);
-        state.editorTool = "place";
-        document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.toggle("active", b.dataset.tool === "place"));
-        renderPalette();
-      });
-    });
-  }
-
-  document.getElementById("btn-cloud-save").addEventListener("click", async () => {
-    const code = encodeMapData();
-    localStorage.setItem(LOCAL_MAP_KEY, code);
-    showPA("☁️ 正在上傳賣場配置至雲端【地圖配置3D】...");
-    try {
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "saveMap3D",
-          password: "0816",
-          code,
-          publicEdit: false
-        })
-      });
-      const json = await res.json();
-      if (json && json.ok) {
-        showPA(`✅ 雲端保存成功！更新時間：${json.updatedAt}`);
-      } else {
-        showPA(`⚠️ 雲端回應異常：${json.msg || "請檢查網路"}`);
-      }
-    } catch (err) {
-      showPA("⚠️ 雲端連線失敗，已先幫您保存在本機瀏覽器！");
-    }
-  });
-
-  // =========================================================
-  // 12. 操控系統
-  // =========================================================
-  document.querySelectorAll(".ctrl-btn[data-key]").forEach(btn => {
-    const k = btn.dataset.key;
-    const setDown = (e) => { e.preventDefault(); state.keys[k] = true; btn.classList.add("pressed"); };
-    const setUp = (e) => { e.preventDefault(); state.keys[k] = false; btn.classList.remove("pressed"); };
-    btn.addEventListener("touchstart", setDown, { passive: false });
-    btn.addEventListener("touchend", setUp);
-    btn.addEventListener("touchcancel", setUp);
-    btn.addEventListener("mousedown", setDown);
-    btn.addEventListener("mouseup", setUp);
-    btn.addEventListener("mouseleave", setUp);
-  });
-
-  document.getElementById("btn-interact").addEventListener("click", () => triggerInteraction());
-
-  window.addEventListener("keydown", e => {
-    if (document.getElementById("modal-backdrop").classList.contains("show")) return;
-    if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") state.keys.fwd = true;
-    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") state.keys.back = true;
-    if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") state.keys.turnL = true;
-    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") state.keys.turnR = true;
-    if (e.key === "q" || e.key === "Q") state.keys.strafeL = true;
-    if (e.key === "e" || e.key === "E") state.keys.strafeR = true;
-    if (e.key === " " || e.key === "Enter") triggerInteraction();
-  });
-
-  window.addEventListener("keyup", e => {
-    if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") state.keys.fwd = false;
-    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") state.keys.back = false;
-    if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") state.keys.turnL = false;
-    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") state.keys.turnR = false;
-    if (e.key === "q" || e.key === "Q") state.keys.strafeL = false;
-    if (e.key === "e" || e.key === "E") state.keys.strafeR = false;
-  });
-
-  let pointerDown = false;
-  let pointerMoved = false;
-  let lastPointerX = 0;
-  let lastPointerY = 0;
-  let pinchStartDist = 0;
-  let pinchStartTiles = 40;
-
-  canvas.addEventListener("touchstart", e => {
-    if (e.touches.length === 2 && state.view === "2d") {
-      pinchStartDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      pinchStartTiles = state.cam2d.visibleTiles;
-      pointerMoved = true;
-      return;
-    }
-    if (e.touches.length === 1) {
-      pointerDown = true;
-      pointerMoved = false;
-      lastPointerX = e.touches[0].clientX;
-      lastPointerY = e.touches[0].clientY;
-    }
-  }, { passive: true });
-
-  canvas.addEventListener("touchmove", e => {
-    if (e.touches.length === 2 && state.view === "2d" && pinchStartDist > 0) {
-      const curDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const scale = pinchStartDist / Math.max(10, curDist);
-      state.cam2d.visibleTiles = Math.max(5, Math.min(40, pinchStartTiles * scale));
-      return;
-    }
-    if (!pointerDown || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - lastPointerX;
-    const dy = e.touches[0].clientY - lastPointerY;
-    if (Math.hypot(dx, dy) > 6) pointerMoved = true;
-
-    if (state.view === "3d") {
-      state.player.angle += dx * 0.0065;
-    } else if (state.view === "2d") {
-      const { tilePx } = get2DTransform();
-      const dpr = canvas.width / canvas.clientWidth;
-      state.cam2d.centerX = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerX - (dx * dpr) / tilePx));
-      state.cam2d.centerY = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerY - (dy * dpr) / tilePx));
-    }
-    lastPointerX = e.touches[0].clientX;
-    lastPointerY = e.touches[0].clientY;
-  }, { passive: true });
-
-  canvas.addEventListener("touchend", () => {
-    if (pointerDown && !pointerMoved) {
-      handleCanvasTap(lastPointerX, lastPointerY);
-    }
-    pointerDown = false;
-    pinchStartDist = 0;
-  });
-
-  canvas.addEventListener("mousedown", e => {
-    pointerDown = true;
-    pointerMoved = false;
-    lastPointerX = e.clientX;
-    lastPointerY = e.clientY;
-  });
-
-  canvas.addEventListener("mousemove", e => {
-    if (!pointerDown) return;
-    const dx = e.clientX - lastPointerX;
-    const dy = e.clientY - lastPointerY;
-    if (Math.hypot(dx, dy) > 5) pointerMoved = true;
-
-    if (state.view === "3d") {
-      state.player.angle += dx * 0.005;
-    } else if (state.view === "2d") {
-      const { tilePx } = get2DTransform();
-      const dpr = canvas.width / canvas.clientWidth;
-      state.cam2d.centerX = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerX - (dx * dpr) / tilePx));
-      state.cam2d.centerY = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerY - (dy * dpr) / tilePx));
-    }
-    lastPointerX = e.clientX;
-    lastPointerY = e.clientY;
-  });
-
-  canvas.addEventListener("mouseup", e => {
-    if (pointerDown && !pointerMoved) {
-      handleCanvasTap(e.clientX, e.clientY);
-    }
-    pointerDown = false;
-  });
-
-  canvas.addEventListener("wheel", e => {
-    if (state.view !== "2d") return;
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 3 : -3;
-    state.cam2d.visibleTiles = Math.max(5, Math.min(40, state.cam2d.visibleTiles + delta));
-  }, { passive: false });
-
-  function handleCanvasTap(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = canvas.width / rect.width;
-    const cx = (clientX - rect.left) * dpr;
-    const cy = (clientY - rect.top) * dpr;
-
-    if (state.view === "3d") {
-      for (let i = renderedHitboxes3D.length - 1; i >= 0; i--) {
-        const box = renderedHitboxes3D[i];
-        if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
-          triggerInteraction(box.obj);
-          return;
-        }
-      }
-      return;
-    }
-
-    const { tilePx, offsetX, offsetY } = get2DTransform();
-    const gx = Math.floor((cx - offsetX) / tilePx);
-    const gy = Math.floor((cy - offsetY) / tilePx);
-    if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
-
-    const panelOpen = state.adminUnlocked && document.getElementById("builder-panel").classList.contains("show");
-    if (panelOpen) {
-      if (state.editorTool === "erase") {
-        const hit = getObjectAt(gx, gy);
-        if (hit) {
-          state.objects = state.objects.filter(o => o.uid !== hit.uid);
-          showPA("🧹 已移除該物件（記得按「雲端保存」寫入試算表）");
-        }
-      } else if (state.editorTool === "move") {
-        if (!state.movingObj) {
-          const hit = getObjectAt(gx, gy);
-          if (hit) {
-            state.movingObj = hit;
-            state.placeDir = hit.dir;
-            document.getElementById("btn-rotate-dir").textContent = `🔄 方向: ${DIR_LABELS[state.placeDir]}`;
-            showPA("✋ 已抓起物件！請點選新的目標格線放下（可按旋轉調整方向）。");
-          }
-        } else {
-          if (canPlaceAt(state.movingObj.id, gx, gy, state.placeDir, state.movingObj.uid)) {
-            state.movingObj.x = gx;
-            state.movingObj.y = gy;
-            state.movingObj.dir = state.placeDir;
-            state.movingObj = null;
-            showPA("✅ 已完成搬家定位！");
-          } else {
-            showPA("⚠️ 目標位置空間不足或與牆壁重疊！");
-          }
-        }
-      } else if (state.editorTool === "place") {
-        if (canPlaceAt(state.selectedAssetId, gx, gy, state.placeDir, null)) {
-          const maxUid = state.objects.reduce((m, o) => Math.max(m, o.uid), 0);
-          state.objects.push({
-            uid: maxUid + 1,
-            id: state.selectedAssetId,
-            x: gx,
-            y: gy,
-            dir: state.placeDir
-          });
-        } else {
-          showPA("⚠️ 此位置無法放置（空間不足或已有物件）！");
-        }
-      }
-      return;
-    }
-
-    if (isCellWalkable(gx, gy)) {
-      state.player.path = findPath2D(Math.floor(state.player.x), Math.floor(state.player.y), gx, gy);
-    }
-  }
-
-  function canPlaceAt(assetId, gx, gy, dir, ignoreUid) {
-    const tempBounds = getObjectBounds({ id: assetId, x: gx, y: gy, dir });
-    for (let y = tempBounds.minY; y <= tempBounds.maxY; y++) {
-      for (let x = tempBounds.minX; x <= tempBounds.maxX; x++) {
-        if (!isCellWalkable(x, y, ignoreUid)) return false;
-      }
-    }
-    return true;
-  }
-
-  function findPath2D(sx, sy, tx, ty) {
-    if (sx === tx && sy === ty) return [];
-    const queue = [[sx, sy]];
-    const visited = new Set([`${sx},${sy}`]);
-    const parent = new Map();
-    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-
-    while (queue.length > 0) {
-      const [cx, cy] = queue.shift();
-      if (cx === tx && cy === ty) {
-        const path = [];
-        let cur = `${tx},${ty}`;
-        while (cur !== `${sx},${sy}`) {
-          const [px, py] = cur.split(",").map(Number);
-          path.unshift({ x: px + 0.5, y: py + 0.5 });
-          cur = parent.get(cur);
-        }
-        return path;
-      }
-      for (const [dx, dy] of dirs) {
-        const nx = cx + dx;
-        const ny = cy + dy;
-        const key = `${nx},${ny}`;
-        if (!visited.has(key) && isCellWalkable(nx, ny)) {
-          visited.add(key);
-          parent.set(key, `${cx},${cy}`);
-          queue.push([nx, ny]);
-        }
-      }
-    }
-    return [];
-  }
-
-  // =========================================================
-  // 13. 遊戲迴圈
-  // =========================================================
-  function tryMovePlayer(dx, dy) {
-    const r = 0.28;
-    const nx = state.player.x + dx;
-    const ny = state.player.y + dy;
-
-    if (
-      isCellWalkable(Math.floor(nx - r), Math.floor(state.player.y - r)) &&
-      isCellWalkable(Math.floor(nx + r), Math.floor(state.player.y - r)) &&
-      isCellWalkable(Math.floor(nx - r), Math.floor(state.player.y + r)) &&
-      isCellWalkable(Math.floor(nx + r), Math.floor(state.player.y + r))
-    ) {
-      state.player.x = nx;
-    }
-
-    if (
-      isCellWalkable(Math.floor(state.player.x - r), Math.floor(ny - r)) &&
-      isCellWalkable(Math.floor(state.player.x + r), Math.floor(ny - r)) &&
-      isCellWalkable(Math.floor(state.player.x - r), Math.floor(ny + r)) &&
-      isCellWalkable(Math.floor(state.player.x + r), Math.floor(ny + r))
-    ) {
-      state.player.y = ny;
-    }
-
-    const deg = ((state.player.angle * 180 / Math.PI) % 360 + 360) % 360;
-    if (deg >= 45 && deg < 135) state.player.dir2d = 0;
-    else if (deg >= 135 && deg < 225) state.player.dir2d = 3;
-    else if (deg >= 225 && deg < 315) state.player.dir2d = 2;
-    else state.player.dir2d = 1;
-  }
-
-  function updateGameSimulation(dt) {
-    if (state.mode !== "game") return;
-
-    state.game.spawnTimer += dt;
-    if (state.game.spawnTimer > 5.5 && state.game.guests.length < 8) {
-      state.game.spawnTimer = 0;
-      const colors = ["#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
-      let tx = 10 + Math.floor(Math.random() * 20);
-      let ty = 8 + Math.floor(Math.random() * 22);
-      if (!isCellWalkable(tx, ty)) { tx = 20; ty = 25; }
-
-      state.game.guests.push({
-        id: Date.now() + Math.random(),
-        x: 19.5,
-        y: 38.2,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        state: "browse",
-        browseTime: 6 + Math.random() * 6,
-        spend: 1200 + Math.floor(Math.random() * 48) * 100,
-        path: findPath2D(19, 38, tx, ty)
-      });
-      updateHudStatus();
-    }
-
-    for (let i = state.game.guests.length - 1; i >= 0; i--) {
-      const g = state.game.guests[i];
-      if (g.path && g.path.length > 0) {
-        const next = g.path[0];
-        const dx = next.x - g.x;
-        const dy = next.y - g.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 0.12) {
-          g.path.shift();
-        } else {
-          g.x += (dx / dist) * 2.1 * dt;
-          g.y += (dy / dist) * 2.1 * dt;
-        }
-      } else if (g.state === "browse") {
-        g.browseTime -= dt;
-        if (g.browseTime <= 0) {
-          const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
-          let targetX = 33;
-          let targetY = 28;
-          if (posCounters.length > 0) {
-            const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
-            targetX = Math.max(1, chosen.x - 1);
-            targetY = chosen.y;
+            const b = getObjectBounds(chosen);
+            if (chosen.dir === 0) { targetX = chosen.x; targetY = Math.min(MAP_SIZE - 2, b.maxY + 1); }
+            else if (chosen.dir === 2) { targetX = chosen.x; targetY = Math.max(1, b.minY - 1); }
+            else if (chosen.dir === 1) { targetX = Math.min(MAP_SIZE - 2, b.maxX + 1); targetY = chosen.y; }
+            else { targetX = Math.max(1, b.minX - 1); targetY = chosen.y; }
           }
           g.state = "queue";
           g.queueTimer = 10;
