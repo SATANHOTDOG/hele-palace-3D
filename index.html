@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>HOLA 大墩店 3D 虛擬展間｜和樂宮 3D</title>
+  <style>
+    :root {
+      --bg-dark: #121417;
+      --panel-bg: rgba(22, 26, 32, 0.94);
+      --panel-border: #3a424e;
+      --gold: #f5b942;
+      --gold-dim: #b88424;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100dvh;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ================= 頂部導覽與特價跑馬燈 ================= */
+    #top-bar {
+      flex: 0 0 auto;
+      background: linear-gradient(180deg, #1e232b 0%, #161a20 100%);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 20;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .mode-pill {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      font-weight: 700;
+    }
+    .mode-pill.game {
+      background: rgba(245, 185, 66, 0.18);
+      color: var(--gold);
+      border-color: rgba(245, 185, 66, 0.5);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-top {
+      border: 1px solid var(--panel-border);
+      background: #252b34;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.08s, background 0.15s;
+    }
+    .btn-top:active { transform: scale(0.95); }
+    .btn-top.primary {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      border-color: #f59e0b;
+      color: #fff;
+    }
+    .btn-top.active-view {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* 特價商品跑馬燈（取代簽筒） */
+    #promo-marquee {
+      background: rgba(15, 18, 22, 0.9);
+      border: 1px solid rgba(245, 185, 66, 0.35);
+      border-radius: 7px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .marquee-tag {
+      flex: 0 0 auto;
+      background: linear-gradient(90deg, #dc2626, #b91c1c);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 0 8px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      letter-spacing: 0.5px;
+      z-index: 2;
+    }
+
+    .marquee-track {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    #marquee-text {
+      display: inline-block;
+      white-space: nowrap;
+      font-size: 12px;
+      color: #fde68a;
+      font-weight: 600;
+      padding-left: 100%;
+      animation: marqueeScroll 22s linear infinite;
+    }
+
+    #promo-marquee:hover #marquee-text {
+      animation-play-state: paused;
+    }
+
+    @keyframes marqueeScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* ================= 主視窗區（3D 畫面 / 2D 地圖） ================= */
+    #viewport-wrap {
+      flex: 1 1 auto;
+      position: relative;
+      overflow: hidden;
+      background: #1a1d24;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    /* 3D 準心 */
+    #crosshair {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+    #crosshair::before, #crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 3px #000;
+    }
+    #crosshair::before { top: 8px; left: 0; width: 18px; height: 2px; }
+    #crosshair::after { left: 8px; top: 0; width: 2px; height: 18px; }
+
+    /* 賣場廣播浮動條 */
+    #pa-banner {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, 0.88);
+      border: 1px solid var(--gold-dim);
+      color: #fef3c7;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      max-width: 92%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s;
+      z-index: 12;
+    }
+    #pa-banner.show { opacity: 1; }
+
+    /* 3D 操控按鈕覆蓋層 */
+    #controls-3d {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .dpad-cluster {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      width: 132px;
+      height: 132px;
+      pointer-events: auto;
+    }
+
+    .ctrl-btn {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(24, 28, 36, 0.72);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+    }
+    .ctrl-btn:active, .ctrl-btn.pressed {
+      background: rgba(245, 185, 66, 0.55);
+      border-color: var(--gold);
+      transform: scale(0.94);
+    }
+
+    #btn-fwd { top: 0; left: 45px; }
+    #btn-back { bottom: 0; left: 45px; }
+    #btn-strafe-l { top: 45px; left: 0; }
+    #btn-strafe-r { top: 45px; right: 0; }
+
+    .action-cluster {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .turn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .turn-btn {
+      position: static;
+      width: 48px;
+      height: 44px;
+    }
+
+    #btn-interact {
+      position: static;
+      width: 106px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.92));
+      border: 1.5px solid #fde68a;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ================= 2D 視野縮放與創造裝潢工具列 ================= */
+    #zoom-bar-2d {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: none;
+      flex-wrap: wrap;
+      gap: 4px;
+      z-index: 15;
+    }
+    #zoom-bar-2d.show { display: flex; }
+
+    .zoom-chip {
+      background: rgba(20, 24, 30, 0.88);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .zoom-chip.active {
+      background: var(--accent);
+      color: #082f49;
+      border-color: #bae6fd;
+    }
+
+    #admin-unlock-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: none;
+      z-index: 15;
+      background: rgba(20, 24, 30, 0.9);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #admin-unlock-btn.show { display: inline-flex; align-items: center; gap: 4px; }
+
+    /* 2D 創造編輯抽屜 */
+    #builder-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--panel-bg);
+      border-top: 1.5px solid var(--gold-dim);
+      padding: 8px 10px;
+      display: none;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 18;
+      backdrop-filter: blur(8px);
+    }
+    #builder-panel.show { display: flex; }
+
+    .builder-tools-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      overflow-x: auto;
+    }
+
+    .tool-btn {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border-radius: 7px;
+      border: 1px solid var(--panel-border);
+      background: #232832;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tool-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .tool-btn.save {
+      background: #15803d;
+      border-color: #4ade80;
+      color: #fff;
+    }
+
+    .cat-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .cat-tab {
+      flex: 1;
+      text-align: center;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      background: #1a1e26;
+      border: 1px solid var(--panel-border);
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .cat-tab.active {
+      background: rgba(245, 185, 66, 0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .palette-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .palette-item {
+      flex: 0 0 auto;
+      min-width: 72px;
+      padding: 5px 7px;
+      border-radius: 8px;
+      background: #1c2129;
+      border: 1.5px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .palette-item.selected {
+      border-color: var(--gold);
+      background: rgba(245, 185, 66, 0.16);
+    }
+    .palette-item img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+    .palette-item span {
+      font-size: 11px;
+      color: var(--text-main);
+      max-width: 76px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ================= 底部 DOOM 風格狀態列（修正不截斷比例） ================= */
+    #doom-hud {
+      flex: 0 0 64px;
+      background: linear-gradient(180deg, #232730 0%, #15181e 100%);
+      border-top: 2px solid #3f4756;
+      display: grid;
+      grid-template-columns: 1.15fr 1.25fr 62px 1.3fr;
+      align-items: center;
+      padding: 4px 6px;
+      gap: 5px;
+      z-index: 20;
+    }
+
+    .hud-box {
+      height: 100%;
+      background: #101318;
+      border: 1px solid #2f3642;
+      border-radius: 7px;
+      padding: 4px 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .hud-label {
+      font-size: 10px;
+      color: var(--text-sub);
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      line-height: 1.1;
+    }
+
+    .hud-val {
+      font-size: clamp(12px, 3.3vw, 15px);
+      font-weight: 800;
+      color: var(--gold);
+      white-space: nowrap;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+    .hud-val.cyan { color: var(--accent); }
+    .hud-val.white { color: #f9fafb; font-size: clamp(11px, 3vw, 13px); }
+
+    .hud-avatar-box {
+      height: 54px;
+      width: 58px;
+      margin: 0 auto;
+      background: radial-gradient(circle at 50% 35%, #2b3240, #11141a);
+      border: 1.5px solid var(--gold-dim);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hud-avatar-box img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    /* ================= 彈出互動視窗（SKU查詢 / 盲盒 / 對話） ================= */
+    #modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+      backdrop-filter: blur(3px);
+    }
+    #modal-backdrop.show { display: flex; }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      max-height: 84dvh;
+      background: #1b2028;
+      border: 1.5px solid var(--gold-dim);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    .modal-header {
+      padding: 12px 14px;
+      background: #232934;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-close {
+      background: #323946;
+      border: none;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 14px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text-main);
+    }
+
+    .npc-speech {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #13171d;
+      border: 1px solid #2e3543;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .npc-speech img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .input-group input {
+      flex: 1;
+      background: #101318;
+      border: 1px solid #3f4856;
+      color: #fff;
+      padding: 9px 11px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .input-group input:focus { border-color: var(--gold); }
+
+    .btn-action {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-action.secondary {
+      background: #2b323e;
+      border: 1px solid #475264;
+    }
+    .btn-action.line {
+      background: #06c755;
+      width: 100%;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .sku-result-box {
+      background: #12161c;
+      border: 1px solid #333c4a;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+    .sku-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dashed #28303d;
+      font-size: 13px;
+    }
+    .sku-row:last-child { border-bottom: none; }
+
+    .blindbox-gift {
+      text-align: center;
+      padding: 16px 10px;
+      background: radial-gradient(circle, rgba(245, 185, 66, 0.18), transparent 70%);
+      border: 1.5px dashed var(--gold);
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- 頂部導覽與特價跑馬燈 -->
+  <header id="top-bar">
+    <div class="top-row">
+      <div class="brand-badge">
+        <span>🏛️ HOLA大墩店</span>
+        <span id="mode-badge" class="mode-pill">3D逛逛</span>
+      </div>
+      <div class="top-actions">
+        <button id="btn-toggle-game" class="btn-top primary">🎮 進入遊戲模式</button>
+        <button id="btn-toggle-view" class="btn-top">🗺️ 2D地圖</button>
+      </div>
+    </div>
+    <!-- 特價商品跑馬燈（取代簽筒） -->
+    <div id="promo-marquee" title="點擊查看特價商品詳情">
+      <div class="marquee-tag">🔥 特價快報</div>
+      <div class="marquee-track">
+        <span id="marquee-text">正在連線 HOLA 大墩店即時商品庫與促銷檔期...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主視窗（3D 第一人稱 / 2D 平面配置） -->
+  <main id="viewport-wrap">
+    <canvas id="main-canvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="pa-banner"></div>
+
+    <!-- 3D 虛擬搖桿與互動鍵 -->
+    <div id="controls-3d">
+      <div class="dpad-cluster">
+        <button class="ctrl-btn" id="btn-fwd" data-key="fwd">▲</button>
+        <button class="ctrl-btn" id="btn-back" data-key="back">▼</button>
+        <button class="ctrl-btn" id="btn-strafe-l" data-key="strafeL">◀</button>
+        <button class="ctrl-btn" id="btn-strafe-r" data-key="strafeR">▶</button>
+      </div>
+      <div class="action-cluster">
+        <div class="turn-row">
+          <button class="ctrl-btn turn-btn" id="btn-turn-l" data-key="turnL">↺</button>
+          <button class="ctrl-btn turn-btn" id="btn-turn-r" data-key="turnR">↻</button>
+        </div>
+        <button class="ctrl-btn" id="btn-interact">🔍 調查</button>
+      </div>
+    </div>
+
+    <!-- 2D 五段縮放按鈕（40x40 ~ 5x5） -->
+    <div id="zoom-bar-2d">
+      <button class="zoom-chip active" data-grid="40">40×40</button>
+      <button class="zoom-chip" data-grid="30">30×30</button>
+      <button class="zoom-chip" data-grid="20">20×20</button>
+      <button class="zoom-chip" data-grid="10">10×10</button>
+      <button class="zoom-chip" data-grid="5">5×5</button>
+    </div>
+
+    <!-- 2D 裝潢編輯解鎖鈕（密碼 0816） -->
+    <button id="admin-unlock-btn">🛠️ 裝潢編輯</button>
+
+    <!-- 2D 創造模式面板 -->
+    <div id="builder-panel">
+      <div class="builder-tools-row">
+        <button class="tool-btn active" data-tool="place">➕ 放置</button>
+        <button class="tool-btn" data-tool="move">✋ 搬家</button>
+        <button class="tool-btn" id="btn-rotate-dir">🔄 方向: 0°正面</button>
+        <button class="tool-btn" data-tool="erase">🧹 移除</button>
+        <button class="tool-btn save" id="btn-cloud-save">☁️ 雲端保存</button>
+      </div>
+      <div class="cat-tabs">
+        <div class="cat-tab active" data-cat="NPC">NPC 人物</div>
+        <div class="cat-tab" data-cat="Store">Store 賣場陳列</div>
+        <div class="cat-tab" data-cat="Furniture">Furniture 家具</div>
+      </div>
+      <div class="palette-strip" id="palette-strip"></div>
+    </div>
+  </main>
+
+  <!-- 底部 DOOM 狀態列（比例優化不截斷） -->
+  <footer id="doom-hud">
+    <div class="hud-box">
+      <span class="hud-label" id="hud-lbl-1">展間模式</span>
+      <span class="hud-val" id="hud-val-1">自由巡店</span>
+    </div>
+    <div class="hud-box">
+      <span class="hud-label" id="hud-lbl-2">店內 / 排隊</span>
+      <span class="hud-val cyan" id="hud-val-2">導覽中</span>
+    </div>
+    <div class="hud-avatar-box">
+      <img id="hud-kobe-img" src="./Kobe.png" alt="Kobe" />
+    </div>
+    <div class="hud-box">
+      <span class="hud-label">準心目標</span>
+      <span class="hud-val white" id="hud-target">前方走道</span>
+    </div>
+  </footer>
+</div>
+
+<!-- 互動視窗 -->
+<div id="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">標題</div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // =========================================================
+  // 1. 系統設定與試算表連線
+  // =========================================================
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxYlSNUXb_Lu2mslqN6TAwYUeSVyIfOpO8akA_kpsIbXgA3AAMe6iOc4M__o8XeA_nrag/exec";
+  const SHEET_ID = "1Gbm50IPslGBT_utfHvxir-ZMCFdWCcXreXlrqlenpx8";
+  const PRODUCTS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
+  const ASSETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("和樂宮3D素材")}`;
+  const LINE_CONSULT_URL = "https://line.me/ti/p/~"; // 可依需求替換專屬 LINE 連結
+
+  const MAP_SIZE = 40;
+  const LOCAL_MAP_KEY = "hola_dadun_3d_map_v1";
+
+  // 預設核心素材（試算表載入前立即生效，載入後自動以試算表數值覆蓋）
+  const DEFAULT_ASSETS = [
+    { ID: 1, Category: "NPC", Name: "金漸層貓服務人員", File: "Golden", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 2, Category: "NPC", Name: "無毛貓服務人員", File: "Hairless", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "TRUE", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 3, Category: "NPC", Name: "家具專員KOBE", File: "Kobe", W: 1, H: 1, ScaleH: 1, Dialog: "", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 21, Category: "Store", Name: "服務台延伸櫃台", File: "Counter", W: 2, H: 1, ScaleH: 0.65, Dialog: "HOLA 大墩店服務台，歡迎洽詢家具配置與配送服務。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 22, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 },
+    { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.8, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
+  ];
+
+  // =========================================================
+  // 2. 全域狀態管理
+  // =========================================================
+  const state = {
+    view: "3d", // "3d" | "2d"
+    mode: "browse", // "browse" (預設3D逛逛) | "game" (遊戲模式)
+    adminUnlocked: false,
+    editorTool: "place", // "place" | "move" | "erase"
+    editorCat: "NPC",
+    selectedAssetId: 1,
+    placeDir: 0, // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
+    movingObj: null,
+
+    // 素材字典 & 商品庫
+    assetsMap: new Map(),
+    assetsList: [],
+    products: [],
+    promoProducts: [],
+    currentMarqueeItem: null,
+
+    // 地圖資料：walls[y][x] (0=空地, 1=外牆), objects: [{ uid, id, x, y, dir }]
+    walls: Array.from({ length: MAP_SIZE }, () => Array(MAP_SIZE).fill(0)),
+    objects: [],
+
+    // 玩家 (Kobe ID 3) 狀態：出發點設在大門內走道中央，面朝北(-PI/2)望向賣場與右側大櫃檯
+    player: {
+      x: 20.5,
+      y: 34.5,
+      angle: -Math.PI / 2,
+      dir2d: 2, // 0:下, 1:右, 2:上, 3:左
+      path: []
+    },
+
+    // 2D 鏡頭縮放與平移
+    cam2d: {
+      visibleTiles: 40,
+      centerX: 20,
+      centerY: 20
+    },
+
+    // 遊戲模式狀態
+    game: {
+      revenue: 0,
+      guests: [],
+      spawnTimer: 0
+    },
+
+    // 輸入控制
+    keys: { fwd: false, back: false, strafeL: false, strafeR: false, turnL: false, turnR: false },
+    lastTime: performance.now()
+  };
+
+  // =========================================================
+  // 3. 四向貼圖與多幀圖片快取引擎 (0 / 90 / 180 / 270)
+  // =========================================================
+  const imageCache = new Map();
+
+  function getSpriteImage(baseFile, angleSuffix = "", allowMirrorFallback = false) {
+    if (!baseFile) return null;
+    const key = `${baseFile}${angleSuffix}`;
+    if (imageCache.has(key)) {
+      const entry = imageCache.get(key);
+      if (entry.status === "loaded") return { img: entry.img, flipX: false };
+      if (entry.status === "error") {
+        // 若 _270 缺圖，自動水平鏡像 _90 補上
+        if (angleSuffix === "_270" && allowMirrorFallback) {
+          const alt = getSpriteImage(baseFile, "_90", false);
+          if (alt) return { img: alt.img, flipX: true };
+        }
+        // 其他角度缺圖則退回正面基準圖
+        if (angleSuffix !== "") {
+          return getSpriteImage(baseFile, "", false);
+        }
+        return null;
+      }
+      return null;
+    }
+
+    const img = new Image();
+    const entry = { status: "loading", img };
+    imageCache.set(key, entry);
+
+    img.onload = () => {
+      entry.status = "loaded";
+      if (baseFile === "Kobe" && angleSuffix === "") {
+        document.getElementById("hud-kobe-img").src = img.src;
+      }
+    };
+    img.onerror = () => {
+      entry.status = "error";
+    };
+    img.src = `./${encodeURIComponent(key)}.png`;
+    return null;
+  }
+
+  function resolveAssetSprite(asset, relAngleRad, timeSec) {
+    if (!asset || !asset.File) return null;
+    // 支援多圖輪播 (例: img1|img2|img3)
+    const files = String(asset.File).split("|").map(s => s.trim()).filter(Boolean);
+    const fps = parseFloat(asset.FPS) || 1;
+    const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
+    const baseFile = files[frameIdx];
+
+    // 依相對視角決定 0 / 90 / 180 / 270
+    let suffix = "";
+    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360; // 0..360
+    if (deg >= 45 && deg < 135) {
+      suffix = "_90";
+    } else if (deg >= 135 && deg < 225) {
+      suffix = "_180";
+    } else if (deg >= 225 && deg < 315) {
+      suffix = "_270";
+    }
+    return getSpriteImage(baseFile, suffix, true);
+  }
+
+  function preloadAllAssets() {
+    state.assetsList.forEach(a => {
+      const files = String(a.File || "").split("|").map(s => s.trim()).filter(Boolean);
+      files.forEach(f => {
+        getSpriteImage(f, "", false);
+        getSpriteImage(f, "_90", false);
+        getSpriteImage(f, "_180", false);
+        getSpriteImage(f, "_270", true);
+      });
+    });
+  }
+
+  // =========================================================
+  // 4. 建立 40×40 預設大墩店地圖（含右側ㄇ字型櫃檯與雙通道）
+  // =========================================================
+  function buildDefaultHolaMap() {
+    // 重置外牆（大門開口在下方 y=39, x=18..21）
+    for (let y = 0; y < MAP_SIZE; y++) {
+      for (let x = 0; x < MAP_SIZE; x++) {
+        const isBorder = (x === 0 || x === MAP_SIZE - 1 || y === 0 || y === MAP_SIZE - 1);
+        const isMainDoor = (y === MAP_SIZE - 1 && x >= 18 && x <= 21);
+        state.walls[y][x] = (isBorder && !isMainDoor) ? 1 : 0;
+      }
+    }
+
+    // 右側ㄇ字型櫃檯配置：
+    // 右牆在 x=39；x=37、38 保留兩格寬走道讓 Kobe 從店員身後走過；
+    // x=36 站店員；x=35 為前排櫃檯（面朝左 dir=3 迎向賣場）；
+    // y=21..23 留空為櫃檯北側入口，Kobe 可自由走進櫃檯內部！
+    let uidCounter = 1;
+    const place = (id, x, y, dir) => {
+      state.objects.push({ uid: uidCounter++, id, x, y, dir });
+    };
+
+    state.objects = [];
+
+    // ㄇ字型上翼橫向延伸櫃檯 (y=20)
+    place(21, 35, 20, 0);
+    place(21, 37, 20, 0);
+
+    // ㄇ字型前排直向主櫃檯 (x=35, dir=3 面朝左/西, 每座 W=2,H=1 轉向後佔 1×2 格)
+    place(21, 35, 24, 3); // 服務台延伸櫃台（前方對應 1號金漸層貓）
+    place(21, 35, 26, 3); // 服務台延伸櫃台（前方對應 2號無毛貓）
+    place(22, 35, 28, 3); // POS收銀櫃檯 1
+    place(23, 35, 30, 3); // POS收銀櫃檯 2
+    place(21, 35, 32, 3); // 服務台延伸櫃台
+
+    // ㄇ字型下翼橫向延伸櫃檯 (y=34)
+    place(21, 35, 34, 2);
+    place(21, 37, 34, 2);
+
+    // 櫃檯內側服務人員 (x=36, dir=3 面朝左/西望向賣場, 身後 x=37,38 為兩格寬通道)
+    place(1, 36, 24, 3); // 1號：金漸層貓服務人員（SKU查詢）
+    place(2, 36, 26, 3); // 2號：無毛貓服務人員（VIP盲盒）
+  }
+
+  // 地圖編碼與解碼（相容雲端地圖配置3D）
+  function encodeMapData() {
+    return JSON.stringify({
+      v: 1,
+      size: MAP_SIZE,
+      objs: state.objects.map(o => [o.id, o.x, o.y, o.dir])
+    });
+  }
+
+  function decodeMapData(codeStr) {
+    if (!codeStr) return false;
+    try {
+      const parsed = JSON.parse(codeStr);
+      if (parsed && Array.isArray(parsed.objs)) {
+        buildDefaultHolaMap(); // 先建好外牆
+        let uid = 1;
+        state.objects = parsed.objs
+          .filter(arr => Array.isArray(arr) && arr.length >= 4 && arr[0] !== 3) // 排除 ID 3 主角重複放置
+          .map(arr => ({
+            uid: uid++,
+            id: Number(arr[0]),
+            x: Number(arr[1]),
+            y: Number(arr[2]),
+            dir: Number(arr[3]) || 0
+          }));
+        return true;
+      }
+    } catch (e) {
+      console.warn("地圖解碼失敗，使用預設大墩店配置", e);
+    }
+    return false;
+  }
+
+  // 計算物件在網格上的實際佔地矩形 (考慮方向旋轉)
+  function getObjectBounds(obj) {
+    const asset = state.assetsMap.get(obj.id) || { W: 1, H: 1 };
+    const w = Math.max(1, parseInt(asset.W) || 1);
+    const h = Math.max(1, parseInt(asset.H) || 1);
+    const rotated = (obj.dir === 1 || obj.dir === 3);
+    const spanX = rotated ? h : w;
+    const spanY = rotated ? w : h;
+    return {
+      minX: obj.x,
+      maxX: obj.x + spanX - 1,
+      minY: obj.y,
+      maxY: obj.y + spanY - 1,
+      spanX,
+      spanY,
+      centerX: obj.x + spanX / 2,
+      centerY: obj.y + spanY / 2
+    };
+  }
+
+  function getObjectAt(gx, gy) {
+    for (let i = state.objects.length - 1; i >= 0; i--) {
+      const b = getObjectBounds(state.objects[i]);
+      if (gx >= b.minX && gx <= b.maxX && gy >= b.minY && gy <= b.maxY) {
+        return state.objects[i];
+      }
+    }
+    return null;
+  }
+
+  function isCellWalkable(gx, gy, ignoreUid = null) {
+    if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return false;
+    if (state.walls[gy][gx] === 1) return false;
+    const obj = getObjectAt(gx, gy);
+    if (obj && obj.uid !== ignoreUid) return false;
+    return true;
+  }
+
+  // =========================================================
+  // 5. 載入試算表資料（和樂宮3D素材、地圖配置3D、商品全資料）
+  // =========================================================
+  function registerAssets(list) {
+    state.assetsMap.clear();
+    state.assetsList = [];
+    list.forEach(raw => {
+      const id = parseInt(raw.ID);
+      if (!id) return;
+      const item = {
+        ID: id,
+        Category: String(raw.Category || "Furniture").trim(),
+        Name: String(raw.Name || `物件#${id}`).trim(),
+        File: String(raw.File || "").trim(),
+        W: parseInt(raw.W) || 1,
+        H: parseInt(raw.H) || 1,
+        ScaleH: parseFloat(raw.ScaleH) || 1,
+        Dialog: String(raw.Dialog || "").trim(),
+        LineBtn: String(raw.LineBtn || "").trim().toUpperCase(),
+        Clicks: parseInt(raw.Clicks) || 0,
+        TransformID: parseInt(raw.TransformID) || 0,
+        Frames: parseInt(raw.Frames) || 1,
+        FPS: parseFloat(raw.FPS) || 1
+      };
+      state.assetsMap.set(id, item);
+      // ID 3 為主角 Kobe 本人，不列入地圖擺設圖鑑
+      if (id !== 3) {
+        state.assetsList.push(item);
+      }
+    });
+    preloadAllAssets();
+    renderPalette();
+  }
+
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+      if (inQuotes) {
+        if (ch === '"' && next === '"') { cur += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { cur += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ",") { row.push(cur); cur = ""; }
+        else if (ch === "\n" || (ch === "\r" && next === "\n")) {
+          if (ch === "\r") i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = "";
+        } else { cur += ch; }
+      }
+    }
+    if (cur.length > 0 || row.length > 0) {
+      row.push(cur);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  async function initDataPipeline() {
+    registerAssets(DEFAULT_ASSETS);
+    buildDefaultHolaMap();
+
+    // 1. 讀取雲端 GAS (和樂宮3D素材 + 地圖配置3D)
+    try {
+      const res = await fetch(`${GAS_URL}?action=get3D`);
+      const json = await res.json();
+      if (json && json.ok) {
+        if (Array.isArray(json.assets) && json.assets.length > 0) {
+          // 合併預設與試算表素材
+          const merged = new Map(DEFAULT_ASSETS.map(a => [a.ID, a]));
+          json.assets.forEach(a => {
+            const id = parseInt(a.ID);
+            if (id) merged.set(id, a);
+          });
+          registerAssets(Array.from(merged.values()));
+        }
+        if (json.mapData && json.mapData.code) {
+          decodeMapData(json.mapData.code);
+          localStorage.setItem(LOCAL_MAP_KEY, json.mapData.code);
+        } else {
+          const localCode = localStorage.getItem(LOCAL_MAP_KEY);
+          if (localCode) decodeMapData(localCode);
+        }
+      }
+    } catch (err) {
+      console.warn("GAS 連線備援中，改讀公開 CSV 與本機快取", err);
+      const localCode = localStorage.getItem(LOCAL_MAP_KEY);
+      if (localCode) decodeMapData(localCode);
+      // 備援讀取公開 CSV
+      try {
+        const csvRes = await fetch(ASSETS_CSV_URL);
+        const csvText = await csvRes.text();
+        const rows = parseCSV(csvText);
+        if (rows.length > 1) {
+          const headers = rows[0].map(h => h.trim());
+          const list = rows.slice(1).map(r => {
+            const obj = {};
+            headers.forEach((h, idx) => { obj[h] = r[idx] || ""; });
+            return obj;
+          });
+          registerAssets(list);
+        }
+      } catch (_) {}
+    }
+
+    // 2. 訪客流量統計 (+1)
+    try {
+      if (!sessionStorage.getItem("hola_3d_hit")) {
+        sessionStorage.setItem("hola_3d_hit", "1");
+        fetch(`${GAS_URL}?action=hit`).catch(() => {});
+      }
+    } catch (_) {}
+
+    // 3. 讀取【商品全資料】供金漸層貓查詢、無毛貓盲盒與頂部特價跑馬燈
+    loadProductsCSV();
+  }
+
+  async function loadProductsCSV() {
+    try {
+      const res = await fetch(PRODUCTS_CSV_URL);
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (rows.length < 2) return;
+      const headers = rows[0].map(h => h.trim());
+      const findCol = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+
+      const cSku = findCol(["SKU", "貨號"]);
+      const cName = findCol(["品名", "商品名稱", "名稱"]);
+      const cPrice = findCol(["售價", "原價", "市價"]);
+      const cPromoPrice = findCol(["特價", "促銷價", "優惠價"]);
+      const cPromoTag = findCol(["促銷", "檔期", "活動"]);
+      const cStock630 = findCol(["HOLA630庫存", "大墩庫存", "庫存"]);
+      const cShow630 = findCol(["HOLA630展示", "展示"]);
+      const cStockYM = findCol(["楊梅庫存", "總倉"]);
+
+      const items = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const sku = String(r[cSku] || "").trim();
+        const name = String(r[cName] || "").trim();
+        if (!sku && !name) continue;
+        items.push({
+          sku,
+          name: name || `商品 ${sku}`,
+          price: String(r[cPrice] || "").trim(),
+          promoPrice: String(r[cPromoPrice] || "").trim(),
+          promoTag: String(r[cPromoTag] || "").trim(),
+          stock630: String(r[cStock630] || "0").trim(),
+          show630: String(r[cShow630] || "0").trim(),
+          stockYM: String(r[cStockYM] || "0").trim()
+        });
+      }
+
+      state.products = items;
+      // 篩選有特價或促銷標記的商品給跑馬燈輪播
+      const promos = items.filter(p => (p.promoPrice && p.promoPrice !== p.price) || p.promoTag);
+      state.promoProducts = promos.length > 0 ? promos : items.slice(0, 30);
+      rotateMarqueeItem();
+    } catch (err) {
+      document.getElementById("marquee-text").textContent = "歡迎光臨 HOLA 大墩店！點擊右側櫃檯找金漸層貓查庫存、無毛貓開 VIP 盲盒！";
+    }
+  }
+
+  function rotateMarqueeItem() {
+    if (!state.promoProducts.length) return;
+    const item = state.promoProducts[Math.floor(Math.random() * state.promoProducts.length)];
+    state.currentMarqueeItem = item;
+    const priceStr = item.promoPrice ? `特價 $${item.promoPrice}` : (item.price ? `$${item.price}` : "門市優惠中");
+    const tagStr = item.promoTag ? `【${item.promoTag}】` : "【精選推薦】";
+    const el = document.getElementById("marquee-text");
+    el.style.animation = "none";
+    el.offsetHeight; // 觸發重繪重啟跑馬燈
+    el.textContent = `${tagStr} ${item.name}（SKU: ${item.sku}）— ${priceStr} ｜ 大墩庫存:${item.stock630} / 展示:${item.show630}（點擊查看詳情）`;
+    el.style.animation = "marqueeScroll 20s linear infinite";
+  }
+  setInterval(rotateMarqueeItem, 20000);
+
+  // =========================================================
+  // 6. 3D 射線投射引擎 (Raycaster + 4向精靈圖渲染)
+  // =========================================================
+  const canvas = document.getElementById("main-canvas");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas() {
+    const wrap = document.getElementById("viewport-wrap");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(wrap.clientWidth * dpr);
+    canvas.height = Math.floor(wrap.clientHeight * dpr);
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function normalizeAngle(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  function render3D(timeSec) {
+    const W = canvas.width;
+    const H = canvas.height;
+    const halfH = H * 0.5;
+
+    // 1. 繪製 HOLA 賣場挑高天花板（工業風深灰＋軌道燈光暈）與水磨石地板
+    const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
+    ceilGrad.addColorStop(0, "#14171d");
+    ceilGrad.addColorStop(1, "#262b35");
+    ctx.fillStyle = ceilGrad;
+    ctx.fillRect(0, 0, W, halfH);
+
+    const floorGrad = ctx.createLinearGradient(0, halfH, 0, H);
+    floorGrad.addColorStop(0, "#4b515c");
+    floorGrad.addColorStop(0.35, "#6b7280");
+    floorGrad.addColorStop(1, "#8b929e");
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, halfH, W, halfH);
+
+    // 2. 射線投射繪製 40×40 賣場牆面
+    const fov = Math.PI / 3; // 60度視角
+    const numRays = Math.min(W, 480); // 兼顧手機流暢度與畫質
+    const stripW = W / numRays;
+    const zBuffer = new Float32Array(numRays);
+
+    const px = state.player.x;
+    const py = state.player.y;
+    const pAngle = state.player.angle;
+
+    for (let i = 0; i < numRays; i++) {
+      const cameraX = (2 * i / numRays) - 1;
+      const rayAngle = pAngle + Math.atan(cameraX * Math.tan(fov / 2));
+      const rayDirX = Math.cos(rayAngle);
+      const rayDirY = Math.sin(rayAngle);
+
+      let mapX = Math.floor(px);
+      let mapY = Math.floor(py);
+
+      const deltaDistX = Math.abs(rayDirX) < 1e-6 ? 1e30 : Math.abs(1 / rayDirX);
+      const deltaDistY = Math.abs(rayDirY) < 1e-6 ? 1e30 : Math.abs(1 / rayDirY);
+
+      let stepX, stepY, sideDistX, sideDistY;
+      if (rayDirX < 0) {
+        stepX = -1;
+        sideDistX = (px - mapX) * deltaDistX;
+      } else {
+        stepX = 1;
+        sideDistX = (mapX + 1.0 - px) * deltaDistX;
+      }
+      if (rayDirY < 0) {
+        stepY = -1;
+        sideDistY = (py - mapY) * deltaDistY;
+      } else {
+        stepY = 1;
+        sideDistY = (mapY + 1.0 - py) * deltaDistY;
+      }
+
+      let hit = 0;
+      let side = 0;
+      let steps = 0;
+      while (hit === 0 && steps < 64) {
+        steps++;
+        if (sideDistX < sideDistY) {
+          sideDistX += deltaDistX;
+          mapX += stepX;
+          side = 0;
+        } else {
+          sideDistY += deltaDistY;
+          mapY += stepY;
+          side = 1;
+        }
+        if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) {
+          hit = 1;
+        } else if (state.walls[mapY][mapX] === 1) {
+          hit = 1;
+        }
+      }
+
+      const perpWallDist = side === 0 ? (sideDistX - deltaDistX) : (sideDistY - deltaDistY);
+      const safeDist = Math.max(0.05, perpWallDist);
+      zBuffer[i] = safeDist;
+
+      const lineH = H / safeDist;
+      const drawStart = halfH - lineH * 0.55;
+
+      // HOLA 暖米白牆面 + 距離霧化陰影
+      const shade = Math.max(0.28, 1 - safeDist / 42) * (side === 1 ? 0.85 : 1);
+      const r = Math.floor(228 * shade);
+      const g = Math.floor(220 * shade);
+      const b = Math.floor(206 * shade);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(i * stripW, drawStart, stripW + 0.8, lineH);
+
+      // 牆面木質踢腳線
+      ctx.fillStyle = `rgb(${Math.floor(110 * shade)},${Math.floor(92 * shade)},${Math.floor(76 * shade)})`;
+      ctx.fillRect(i * stripW, drawStart + lineH * 0.92, stripW + 0.8, lineH * 0.08);
+    }
+
+    // 3. 收集所有 3D 精靈圖（家具/櫃檯/NPC + 遊戲模式顧客）並由遠而近排序
+    const renderList = [];
+
+    state.objects.forEach(obj => {
+      const asset = state.assetsMap.get(obj.id);
+      if (!asset) return;
+      const bounds = getObjectBounds(obj);
+      const dx = bounds.centerX - px;
+      const dy = bounds.centerY - py;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.25 || dist > 45) return;
+
+      // 計算攝影機相對於物件正面的角度（決定顯示 0 / 90 / 180 / 270）
+      // 物件朝向: 0=南(+Y, PI/2), 1=東(+X, 0), 2=北(-Y, -PI/2), 3=西(-X, PI)
+      const facingAngles = [Math.PI / 2, 0, -Math.PI / 2, Math.PI];
+      const objFacing = facingAngles[obj.dir] ?? (Math.PI / 2);
+      const vecToCam = Math.atan2(py - bounds.centerY, px - bounds.centerX);
+      const relAngle = normalizeAngle(vecToCam - objFacing);
+
+      // 判斷目前是正面/背面(使用 W 寬度) 還是側面(使用 H 厚度)
+      const deg = ((relAngle * 180 / Math.PI) % 360 + 360) % 360;
+      const isSideView = (deg >= 45 && deg < 135) || (deg >= 225 && deg < 315);
+      const worldWidth = isSideView ? asset.H : asset.W;
+
+      renderList.push({
+        type: "obj",
+        obj,
+        asset,
+        cx: bounds.centerX,
+        cy: bounds.centerY,
+        dist,
+        relAngle,
+        worldWidth,
+        scaleH: asset.ScaleH || 1
+      });
+    });
+
+    // 遊戲模式下的 AI 顧客
+    if (state.mode === "game") {
+      state.game.guests.forEach(g => {
+        const dx = g.x - px;
+        const dy = g.y - py;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0.25 && dist < 40) {
+          renderList.push({
+            type: "guest",
+            guest: g,
+            cx: g.x,
+            cy: g.y,
+            dist,
+            worldWidth: 0.75,
+            scaleH: 0.92
+          });
+        }
+      });
+    }
+
+    renderList.sort((a, b) => b.dist - a.dist);
+
+    const dirX = Math.cos(pAngle);
+    const dirY = Math.sin(pAngle);
+    const planeLen = Math.tan(fov / 2);
+    const planeX = -dirY * planeLen;
+    const planeY = dirX * planeLen;
+    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
+
+    renderedHitboxes3D = [];
+
+    for (const item of renderList) {
+      const spriteX = item.cx - px;
+      const spriteY = item.cy - py;
+
+      const transformX = invDet * (dirY * spriteX - dirX * spriteY);
+      const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
+      if (transformY <= 0.15) continue;
+
+      const spriteScreenX = (W / 2) * (1 + transformX / transformY);
+      const baseUnitH = Math.abs(H / transformY);
+      const floorY = halfH + baseUnitH * 0.45; // 地板對齊基準線
+
+      if (item.type === "obj") {
+        const resolved = resolveAssetSprite(item.asset, item.relAngle, timeSec);
+        const drawH = baseUnitH * item.scaleH;
+        let drawW = baseUnitH * item.worldWidth;
+
+        // 若有載入實際圖片且為 1x1 物件，保持原圖長寬比不變形；若 W>1 則依 worldWidth 展開貼齊櫃檯
+        if (resolved && resolved.img && item.asset.W === 1 && item.asset.H === 1) {
+          const aspect = resolved.img.width / Math.max(1, resolved.img.height);
+          drawW = drawH * aspect;
+        }
+
+        const leftX = spriteScreenX - drawW / 2;
+        const topY = floorY - drawH;
+
+        // 簡易 Z-buffer 遮擋檢查（取中心與左右採樣點）
+        const sampleRays = [spriteScreenX, leftX + drawW * 0.2, leftX + drawW * 0.8]
+          .map(sx => Math.floor((sx / W) * numRays))
+          .filter(idx => idx >= 0 && idx < numRays);
+        const visible = sampleRays.some(idx => transformY < zBuffer[idx] + 0.35);
+        if (!visible) continue;
+
+        if (resolved && resolved.img) {
+          ctx.save();
+          if (resolved.flipX) {
+            ctx.translate(spriteScreenX, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(resolved.img, -drawW / 2, topY, drawW, drawH);
+          } else {
+            ctx.drawImage(resolved.img, leftX, topY, drawW, drawH);
+          }
+          ctx.restore();
+        } else {
+          // 圖片尚未上傳時的清晰佔位標牌（標示編號與名稱）
+          ctx.fillStyle = item.asset.Category === "NPC" ? "#f59e0b" : "#8d6e63";
+          ctx.fillRect(leftX, topY, drawW, drawH);
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(leftX, topY, drawW, drawH);
+          ctx.fillStyle = "#fff";
+          ctx.font = `bold ${Math.max(11, Math.floor(drawH * 0.14))}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.fillText(`#${item.asset.ID} ${item.asset.Name}`, spriteScreenX, topY + drawH * 0.52);
+        }
+
+        // 紀錄螢幕可點擊區（支援 3D 畫面直接點貓咪或家具互動）
+        renderedHitboxes3D.push({
+          left: leftX,
+          right: leftX + drawW,
+          top: topY,
+          bottom: floorY,
+          obj: item.obj
+        });
+      } else if (item.type === "guest") {
+        // 遊戲模式顧客立繪（矢量像素風格顧客）
+        const drawH = baseUnitH * 0.9;
+        const drawW = drawH * 0.55;
+        const leftX = spriteScreenX - drawW / 2;
+        const topY = floorY - drawH;
+        const rayIdx = Math.floor((spriteScreenX / W) * numRays);
+        if (rayIdx >= 0 && rayIdx < numRays && transformY < zBuffer[rayIdx] + 0.2) {
+          drawPixelGuest3D(ctx, leftX, topY, drawW, drawH, item.guest);
+        }
+      }
+    }
+
+    updateCrosshairTarget();
+  }
+
+  let renderedHitboxes3D = [];
+
+  function drawPixelGuest3D(ctx, x, y, w, h, guest) {
+    ctx.save();
+    // 身體
+    ctx.fillStyle = guest.color;
+    ctx.fillRect(x + w * 0.2, y + h * 0.35, w * 0.6, h * 0.45);
+    // 頭部
+    ctx.fillStyle = "#fde68a";
+    ctx.fillRect(x + w * 0.25, y + h * 0.08, w * 0.5, h * 0.27);
+    // 腿部
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(x + w * 0.25, y + h * 0.8, w * 0.2, h * 0.2);
+    ctx.fillRect(x + w * 0.55, y + h * 0.8, w * 0.2, h * 0.2);
+    // 狀態氣泡
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(x, y - 22, w, 18);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(guest.state === "queue" ? "💳待結帳" : "🛍️逛展間", x + w / 2, y - 9);
+    ctx.restore();
+  }
+
+  // =========================================================
+  // 7. 2D 平面地圖渲染（五段視野縮放 + 手勢縮放平移 + 建造格線）
+  // =========================================================
+  function get2DTransform() {
+    const W = canvas.width;
+    const H = canvas.height;
+    const minSide = Math.min(W, H);
+    const tilePx = minSide / state.cam2d.visibleTiles;
+    const offsetX = W / 2 - state.cam2d.centerX * tilePx;
+    const offsetY = H / 2 - state.cam2d.centerY * tilePx;
+    return { tilePx, offsetX, offsetY };
+  }
+
+  function render2D(timeSec) {
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.fillStyle = "#11141a";
+    ctx.fillRect(0, 0, W, H);
+
+    const { tilePx, offsetX, offsetY } = get2DTransform();
+
+    // 繪製地板與網格線
+    for (let y = 0; y < MAP_SIZE; y++) {
+      for (let x = 0; x < MAP_SIZE; x++) {
+        const sx = offsetX + x * tilePx;
+        const sy = offsetY + y * tilePx;
+        if (sx + tilePx < 0 || sx > W || sy + tilePx < 0 || sy > H) continue;
+
+        if (state.walls[y][x] === 1) {
+          ctx.fillStyle = "#5c4d42";
+          ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
+        } else {
+          ctx.fillStyle = ((x + y) % 2 === 0) ? "#d8dce3" : "#cfd5de";
+          ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
+          if (tilePx >= 10) {
+            ctx.strokeStyle = "rgba(0,0,0,0.08)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(sx, sy, tilePx, tilePx);
+          }
+        }
+      }
+    }
+
+    // 標示大門入口
+    const doorX = offsetX + 18 * tilePx;
+    const doorY = offsetY + 39 * tilePx;
+    ctx.fillStyle = "rgba(34, 197, 94, 0.35)";
+    ctx.fillRect(doorX, doorY, 4 * tilePx, tilePx);
+
+    // 繪製已放置的家具 / 櫃檯 / NPC
+    state.objects.forEach(obj => {
+      const asset = state.assetsMap.get(obj.id);
+      if (!asset) return;
+      const b = getObjectBounds(obj);
+      const sx = offsetX + b.minX * tilePx;
+      const sy = offsetY + b.minY * tilePx;
+      const sw = b.spanX * tilePx;
+      const sh = b.spanY * tilePx;
+
+      // 底座框線
+      ctx.fillStyle = asset.Category === "NPC" ? "rgba(245, 158, 11, 0.25)" : "rgba(56, 189, 248, 0.22)";
+      ctx.fillRect(sx + 1, sy + 1, sw - 2, sh - 2);
+      ctx.strokeStyle = (state.movingObj && state.movingObj.uid === obj.uid) ? "#ef4444" : "rgba(15, 23, 42, 0.45)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+
+      // 依物件方向取得對應角度貼圖
+      const suffixes = ["", "_90", "_180", "_270"];
+      const baseFile = String(asset.File || "").split("|")[0].trim();
+      const spr = getSpriteImage(baseFile, suffixes[obj.dir] || "", true);
+      if (spr && spr.img) {
+        ctx.save();
+        if (spr.flipX) {
+          ctx.translate(sx + sw / 2, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(spr.img, -sw / 2, sy, sw, sh);
+        } else {
+          ctx.drawImage(spr.img, sx, sy, sw, sh);
+        }
+        ctx.restore();
+      } else if (tilePx >= 14) {
+        ctx.fillStyle = "#111827";
+        ctx.font = `bold ${Math.max(9, Math.floor(tilePx * 0.35))}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(`#${asset.ID}`, sx + sw / 2, sy + sh / 2 + 3);
+      }
+
+      // 方向指示小箭頭
+      if (tilePx >= 16) {
+        const arrows = ["↓", "→", "↑", "←"];
+        ctx.fillStyle = "#dc2626";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(arrows[obj.dir] || "↓", sx + sw - 7, sy + 10);
+      }
+    });
+
+    // 繪製遊戲模式 AI 顧客
+    if (state.mode === "game") {
+      state.game.guests.forEach(g => {
+        const gx = offsetX + g.x * tilePx;
+        const gy = offsetY + g.y * tilePx;
+        ctx.fillStyle = g.color;
+        ctx.beginPath();
+        ctx.arc(gx, gy, Math.max(4, tilePx * 0.32), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
+      });
+    }
+
+    // 繪製主角 Kobe (ID 3)
+    const kx = offsetX + state.player.x * tilePx;
+    const ky = offsetY + state.player.y * tilePx;
+    const kSize = Math.max(16, tilePx * 1.15);
+    const kSuffixes = ["", "_90", "_180", "_270"];
+    const kSpr = getSpriteImage("Kobe", kSuffixes[state.player.dir2d] || "", true);
+    if (kSpr && kSpr.img) {
+      ctx.save();
+      if (kSpr.flipX) {
+        ctx.translate(kx, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(kSpr.img, -kSize / 2, ky - kSize / 2, kSize, kSize);
+      } else {
+        ctx.drawImage(kSpr.img, kx - kSize / 2, ky - kSize / 2, kSize, kSize);
+      }
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#38bdf8";
+      ctx.beginPath();
+      ctx.arc(kx, ky, tilePx * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 視線方向指示線
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(kx, ky);
+    ctx.lineTo(kx + Math.cos(state.player.angle) * tilePx * 0.9, ky + Math.sin(state.player.angle) * tilePx * 0.9);
+    ctx.stroke();
+  }
+
+  // =========================================================
+  // 8. 互動邏輯（隔櫃穿透偵測 + POS 機前服務連動 + SKU 查詢 + VIP 盲盒）
+  // =========================================================
+  function findTargetObjectAhead() {
+    const px = state.player.x;
+    const py = state.player.y;
+    const cos = Math.cos(state.player.angle);
+    const sin = Math.sin(state.player.angle);
+
+    // 1. 先掃描前方 0.6 ~ 1.6 格內最近物件
+    let frontObj = null;
+    for (const d of [0.75, 1.2, 1.55]) {
+      const gx = Math.floor(px + cos * d);
+      const gy = Math.floor(py + sin * d);
+      const found = getObjectAt(gx, gy);
+      if (found) {
+        frontObj = found;
+        break;
+      }
+    }
+
+    if (!frontObj) return { obj: null, behindNpc: null };
+
+    // 2. 若前方是櫃檯 (ID 21 服務台 / ID 22, 23 POS收銀台)，啟動「隔櫃穿透」往後延伸 2 格偵測貓咪店員
+    const frontAsset = state.assetsMap.get(frontObj.id);
+    if (frontAsset && (frontAsset.Category === "Store" || [21, 22, 23].includes(frontObj.id))) {
+      for (const d of [1.8, 2.3, 2.8]) {
+        const gx = Math.floor(px + cos * d);
+        const gy = Math.floor(py + sin * d);
+        const behind = getObjectAt(gx, gy);
+        if (behind && behind.uid !== frontObj.uid) {
+          const bAsset = state.assetsMap.get(behind.id);
+          if (bAsset && bAsset.Category === "NPC") {
+            return { obj: frontObj, behindNpc: behind };
+          }
+        }
+      }
+    }
+
+    return { obj: frontObj, behindNpc: null };
+  }
+
+  function updateCrosshairTarget() {
+    const targetEl = document.getElementById("hud-target");
+    const { obj, behindNpc } = findTargetObjectAhead();
+    if (behindNpc) {
+      const a = state.assetsMap.get(behindNpc.id);
+      targetEl.textContent = a ? a.Name : "服務人員";
+    } else if (obj) {
+      const a = state.assetsMap.get(obj.id);
+      targetEl.textContent = a ? a.Name : `物件#${obj.id}`;
+    } else {
+      targetEl.textContent = "前方走道";
+    }
+  }
+
+  function triggerInteraction(specificObj = null) {
+    let targetObj = specificObj;
+    let behindNpc = null;
+
+    if (!targetObj) {
+      const res = findTargetObjectAhead();
+      targetObj = res.obj;
+      behindNpc = res.behindNpc;
+    }
+
+    if (!targetObj) {
+      showPA("前方沒有可互動的商品或服務人員，請靠近櫃檯再試。");
+      return;
+    }
+
+    // 若隔著櫃檯瞄準到金漸層貓(1)或無毛貓(2)，優先與貓咪店員互動
+    const effectiveObj = behindNpc || targetObj;
+    const asset = state.assetsMap.get(effectiveObj.id);
+    if (!asset) return;
+
+    // 1號：金漸層貓服務人員 -> SKU 價格與庫存查詢
+    if (asset.ID === 1) {
+      openSkuModal();
+      return;
+    }
+
+    // 2號：無毛貓服務人員 -> 60 天 VIP 盲盒
+    if (asset.ID === 2) {
+      openBlindBoxModal();
+      return;
+    }
+
+    // 22 / 23 號：POS 收銀櫃檯
+    if (asset.ID === 22 || asset.ID === 23) {
+      if (state.mode === "game") {
+        // 遊戲模式：結帳排隊顧客
+        const qIdx = state.game.guests.findIndex(g => g.state === "queue");
+        if (qIdx !== -1) {
+          const served = state.game.guests.splice(qIdx, 1)[0];
+          const bonus = Math.round(served.spend * 1.1);
+          state.game.revenue += bonus;
+          updateHudStatus();
+          showPA(`💰 親自在 POS 櫃檯結帳完成！獲得 VIP 加成營收 $${bonus.toLocaleString()}`);
+        } else {
+          showPA("目前 POS 櫃檯沒有排隊結帳的顧客。");
+        }
+      } else {
+        // 非遊戲（3D逛逛）模式：站在 POS 櫃檯前也能直接呼叫兩隻貓咪服務！
+        openCounterConciergeModal(asset.Name);
+      }
+      return;
+    }
+
+    // 21 號：服務台延伸櫃檯（若該格正後方沒站貓，同樣提供櫃檯服務選單）
+    if (asset.ID === 21) {
+      openCounterConciergeModal(asset.Name);
+      return;
+    }
+
+    // 其他家具 / NPC / 賣場陳列通用對話
+    openGenericAssetModal(asset);
+  }
+
+  // =========================================================
+  // 9. 互動視窗內容（SKU 查詢 / VIP 盲盒 / 櫃檯服務 / 跑馬燈商品）
+  // =========================================================
+  function openModal(title, html) {
+    document.getElementById("modal-title").innerHTML = title;
+    document.getElementById("modal-body").innerHTML = html;
+    document.getElementById("modal-backdrop").classList.add("show");
+  }
+
+  function closeModal() {
+    document.getElementById("modal-backdrop").classList.remove("show");
+  }
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+  document.getElementById("modal-backdrop").addEventListener("click", (e) => {
+    if (e.target.id === "modal-backdrop") closeModal();
+  });
+
+  // 櫃檯服務快捷選單（站在 POS 機或延伸櫃檯前按調查時開啟）
+  function openCounterConciergeModal(counterName) {
+    openModal(`🛎️ ${counterName}`, `
+      <p style="margin-top:0;color:#d1d5db;">歡迎來到 HOLA 大墩店服務收銀區！您想辦理哪一項服務？</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn-action" id="quick-sku-btn">🐱 找金漸層貓（查詢商品價格與即時庫存）</button>
+        <button class="btn-action secondary" id="quick-box-btn">🐈 找無毛貓（開啟 60 天 VIP 專屬盲盒）</button>
+        <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 加家具專員 KOBE LINE 線上諮詢</a>
+      </div>
+    `);
+    document.getElementById("quick-sku-btn").onclick = openSkuModal;
+    document.getElementById("quick-box-btn").onclick = openBlindBoxModal;
+  }
+
+  // ID 1 金漸層貓：SKU 價格與庫存查詢
+  function openSkuModal(prefillSku = "") {
+    const asset = state.assetsMap.get(1);
+    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵～歡迎光臨 HOLA 大墩店！輸入商品 SKU 貨號或品名關鍵字，我立刻幫您查價格與店內庫存！";
+    openModal(`🐱 金漸層貓服務人員 — 商品查詢`, `
+      <div class="npc-speech">
+        <img src="./Golden.png" alt="金漸層貓" />
+        <div>${speech}</div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="sku-query-input" placeholder="輸入 SKU（例如 016...）或商品名稱" value="${prefillSku}" />
+        <button class="btn-action" id="sku-search-btn">查詢</button>
+      </div>
+      <div id="sku-result-area"></div>
+      <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 傳送商品給 KOBE 專員保留 / 報價</a>
+    `);
+
+    const runSearch = () => {
+      const q = document.getElementById("sku-query-input").value.trim().toLowerCase();
+      const area = document.getElementById("sku-result-area");
+      if (!q) {
+        area.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入 SKU 貨號或商品關鍵字喔！</div>`;
+        return;
+      }
+      if (!state.products.length) {
+        area.innerHTML = `<div style="color:#9ca3af;font-size:13px;">商品全資料正在載入中，請稍候 2 秒再按一次查詢...</div>`;
+        return;
+      }
+      const matches = state.products.filter(p =>
+        p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (!matches.length) {
+        area.innerHTML = `
+          <div class="sku-result-box">
+            <div style="color:#fca5a5;font-weight:700;">查無「${q}」的本地庫存紀錄</div>
+            <div style="margin-top:6px;font-size:12px;color:#9ca3af;">可點擊下方按鈕直接前往 HOLA 官網查看：</div>
+            <a href="https://www.hola.com.tw/p/${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#38bdf8;font-weight:700;">🔗 前往 HOLA 官網查看 /p/${q}</a>
+          </div>
+        `;
+        return;
+      }
+
+      area.innerHTML = matches.map(p => `
+        <div class="sku-result-box">
+          <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">${p.name}</div>
+          <div class="sku-row"><span>SKU 貨號</span><strong>${p.sku}</strong></div>
+          <div class="sku-row"><span>原價 / 特價</span><strong>${p.price ? "$" + p.price : "-"} / <span style="color:#4ade80;">${p.promoPrice ? "$" + p.promoPrice : "依門市為準"}</span></strong></div>
+          <div class="sku-row"><span>大墩店(630) 庫存 / 展示</span><strong>${p.stock630} 件 / ${p.show630} 件</strong></div>
+          <div class="sku-row"><span>楊梅總倉可用</span><strong>${p.stockYM} 件</strong></div>
+          ${p.promoTag ? `<div class="sku-row"><span>促銷檔期</span><strong style="color:#fb923c;">${p.promoTag}</strong></div>` : ""}
+          <div style="margin-top:6px;text-align:right;">
+            <a href="https://www.hola.com.tw/p/${encodeURIComponent(p.sku)}" target="_blank" rel="noopener" style="color:#38bdf8;font-size:12px;font-weight:700;">🔗 開啟官網商品頁</a>
+          </div>
+        </div>
+      `).join("");
+    };
+
+    document.getElementById("sku-search-btn").onclick = runSearch;
+    document.getElementById("sku-query-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") runSearch();
+    });
+    if (prefillSku) runSearch();
+  }
+
+  // ID 2 無毛貓：60 天 VIP 盲盒（取代光明燈）
+  function openBlindBoxModal() {
+    const asset = state.assetsMap.get(2);
+    const speech = (asset && asset.Dialog) ? asset.Dialog : "喵嗚～我是無毛貓禮賓員！輸入商品 SKU，幫您鑄造一組效期 60 天的「VIP 專屬驚喜盲盒」分享連結！";
+    openModal(`🐈 無毛貓服務人員 — 60天 VIP 盲盒`, `
+      <div class="npc-speech">
+        <img src="./Hairless.png" alt="無毛貓" />
+        <div>${speech}</div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="blindbox-sku-input" placeholder="輸入要藏進盲盒的 SKU 貨號" />
+        <button class="btn-action" id="blindbox-mint-btn">🎁 生成盲盒</button>
+      </div>
+      <div style="margin-bottom:8px;">
+        <input type="text" id="blindbox-note-input" placeholder="選填：給貴賓的專屬祝福或優惠備註" style="width:100%;background:#101318;border:1px solid #3f4856;color:#fff;padding:8px 10px;border-radius:8px;font-size:13px;" />
+      </div>
+      <div id="blindbox-output"></div>
+    `);
+
+    document.getElementById("blindbox-mint-btn").onclick = () => {
+      const sku = document.getElementById("blindbox-sku-input").value.trim();
+      const note = document.getElementById("blindbox-note-input").value.trim();
+      const out = document.getElementById("blindbox-output");
+      if (!sku) {
+        out.innerHTML = `<div style="color:#fbbf24;font-size:13px;">請先輸入要裝進盲盒的 SKU 貨號！</div>`;
+        return;
+      }
+      const payload = {
+        s: sku,
+        n: note || "HOLA 大墩店 KOBE 專員為您精選的 VIP 驚喜推薦！",
+        t: Date.now()
+      };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      const shareUrl = `${location.origin}${location.pathname}?box=${encodeURIComponent(encoded)}`;
+
+      out.innerHTML = `
+        <div class="blindbox-gift">
+          <div style="font-size:28px;">🎁✨</div>
+          <div style="font-weight:800;color:#fde68a;margin:4px 0;">60 天 VIP 盲盒鑄造成功！</div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">客人點開下方連結後，將直接進入 3D 展間並開啟您的推薦盲盒：</div>
+          <input type="text" readonly value="${shareUrl}" id="blindbox-url-field" style="width:100%;background:#0d1015;border:1px solid #4b5563;color:#38bdf8;padding:6px 8px;border-radius:6px;font-size:11px;margin-bottom:8px;" />
+          <div style="display:flex;gap:6px;justify-content:center;">
+            <button class="btn-action" id="copy-box-btn">📋 複製盲盒連結</button>
+            <button class="btn-action secondary" id="preview-box-btn">👀 立即預覽開啟</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("copy-box-btn").onclick = () => {
+        const field = document.getElementById("blindbox-url-field");
+        field.select();
+        navigator.clipboard?.writeText(shareUrl);
+        showPA("✅ VIP 盲盒連結已複製，可直接貼到 LINE 傳給客人！");
+      };
+      document.getElementById("preview-box-btn").onclick = () => revealBlindBox(payload);
+    };
+  }
+
+  function revealBlindBox(payload) {
+    const daysLeft = Math.max(0, Math.ceil((payload.t + 60 * 86400000 - Date.now()) / 86400000));
+    if (daysLeft <= 0) {
+      openModal("🎁 VIP 盲盒已過期", `<p>此組 VIP 盲盒已超過 60 天效期，歡迎聯絡 HOLA 大墩店家具專員 KOBE 領取最新優惠！</p>`);
+      return;
+    }
+    const found = state.products.find(p => p.sku === payload.s);
+    const itemName = found ? found.name : `精選商品 (SKU: ${payload.s})`;
+    const priceInfo = found && found.promoPrice ? `VIP 驚喜特價：$${found.promoPrice}` : (found && found.price ? `參考售價：$${found.price}` : "專員專屬禮遇價");
+
+    openModal("🎁 您收到一份 HOLA 大墩店 VIP 盲盒！", `
+      <div class="blindbox-gift">
+        <div style="font-size:36px;">🎉🎁🎉</div>
+        <div style="font-size:16px;font-weight:800;color:#fde68a;margin:6px 0;">${itemName}</div>
+        <div style="font-size:13px;color:#4ade80;font-weight:700;">${priceInfo}</div>
+        <p style="font-size:13px;color:#e5e7eb;background:#11151c;padding:8px;border-radius:8px;margin:10px 0;">「${payload.n}」</p>
+        <div style="font-size:11px;color:#9ca3af;">盲盒有效期限剩餘：${daysLeft} 天</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+          <a class="btn-action" href="https://www.hola.com.tw/p/${encodeURIComponent(payload.s)}" target="_blank" rel="noopener" style="text-decoration:none;">🔗 查看商品詳細規格</a>
+          <a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 聯絡 KOBE 專員預約體驗</a>
+        </div>
+      </div>
+    `);
+  }
+
+  function checkIncomingBlindBox() {
+    const params = new URLSearchParams(location.search);
+    const boxParam = params.get("box");
+    if (!boxParam) return;
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(boxParam))));
+      if (decoded && decoded.s) {
+        setTimeout(() => revealBlindBox(decoded), 600);
+      }
+    } catch (_) {}
+  }
+
+  // 跑馬燈點擊事件
+  document.getElementById("promo-marquee").addEventListener("click", () => {
+    if (state.currentMarqueeItem) {
+      openSkuModal(state.currentMarqueeItem.sku);
+    } else {
+      openSkuModal();
+    }
+  });
+
+  // 一般物件對話視窗
+  function openGenericAssetModal(asset) {
+    const baseFile = String(asset.File || "").split("|")[0].trim();
+    const imgHtml = baseFile ? `<img src="./${encodeURIComponent(baseFile)}.png" alt="${asset.Name}" onerror="this.style.display='none'" />` : "";
+    const dialog = asset.Dialog || `這是「${asset.Name}」（編號 #${asset.ID}）。歡迎在 3D 展間繞行觀看各個角度！`;
+    const lineHtml = asset.LineBtn === "TRUE" ? `<a class="btn-action line" href="${LINE_CONSULT_URL}" target="_blank" rel="noopener">💬 加 KOBE 專員 LINE 諮詢</a>` : "";
+
+    openModal(`🏷️ ${asset.Name}`, `
+      <div class="npc-speech">
+        ${imgHtml}
+        <div>${dialog}</div>
+      </div>
+      ${lineHtml}
+    `);
+  }
+
+  // =========================================================
+  // 10. 模式切換（3D逛逛 / 遊戲模式）與視角切換（3D / 2D）
+  // =========================================================
+  const btnToggleGame = document.getElementById("btn-toggle-game");
+  const btnToggleView = document.getElementById("btn-toggle-view");
+  const modeBadge = document.getElementById("mode-badge");
+
+  btnToggleGame.addEventListener("click", () => {
+    if (state.mode === "browse") {
+      state.mode = "game";
+      btnToggleGame.textContent = "🏪 返回 3D 逛逛";
+      btnToggleGame.classList.remove("primary");
+      modeBadge.textContent = "遊戲營業中";
+      modeBadge.classList.add("game");
+      showPA("🔔 HOLA 大墩店開始營業！AI 顧客進店挑選並前往雙收銀台排隊！");
+    } else {
+      state.mode = "browse";
+      state.game.guests = [];
+      btnToggleGame.textContent = "🎮 進入遊戲模式";
+      btnToggleGame.classList.add("primary");
+      modeBadge.textContent = "3D逛逛";
+      modeBadge.classList.remove("game");
+      showPA("✨ 已切換回純淨 3D 虛擬展間導覽模式。");
+    }
+    updateHudStatus();
+  });
+
+  btnToggleView.addEventListener("click", () => {
+    if (state.view === "3d") {
+      state.view = "2d";
+      state.cam2d.centerX = state.player.x;
+      state.cam2d.centerY = state.player.y;
+      btnToggleView.textContent = "🏛️ 返回 3D";
+      btnToggleView.classList.add("active-view");
+      document.getElementById("controls-3d").style.display = "none";
+      document.getElementById("crosshair").style.display = "none";
+      document.getElementById("zoom-bar-2d").classList.add("show");
+      document.getElementById("admin-unlock-btn").classList.add("show");
+      if (state.adminUnlocked) {
+        document.getElementById("builder-panel").classList.add("show");
+      }
+    } else {
+      state.view = "3d";
+      state.movingObj = null;
+      btnToggleView.textContent = "🗺️ 2D地圖";
+      btnToggleView.classList.remove("active-view");
+      document.getElementById("controls-3d").style.display = "block";
+      document.getElementById("crosshair").style.display = "block";
+      document.getElementById("zoom-bar-2d").classList.remove("show");
+      document.getElementById("admin-unlock-btn").classList.remove("show");
+      document.getElementById("builder-panel").classList.remove("show");
+    }
+  });
+
+  function updateHudStatus() {
+    const l1 = document.getElementById("hud-lbl-1");
+    const v1 = document.getElementById("hud-val-1");
+    const l2 = document.getElementById("hud-lbl-2");
+    const v2 = document.getElementById("hud-val-2");
+
+    if (state.mode === "game") {
+      l1.textContent = "今日營收";
+      v1.textContent = `$${state.game.revenue.toLocaleString()}`;
+      l2.textContent = "店內 / 排隊";
+      const totalG = state.game.guests.length;
+      const queueG = state.game.guests.filter(g => g.state === "queue").length;
+      v2.textContent = `${totalG}逛 / ${queueG}排`;
+    } else {
+      l1.textContent = "展間模式";
+      v1.textContent = "自由巡店";
+      l2.textContent = "櫃檯服務";
+      v2.textContent = "查詢 / 盲盒";
+    }
+  }
+
+  let paTimer = null;
+  function showPA(msg) {
+    const el = document.getElementById("pa-banner");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(paTimer);
+    paTimer = setTimeout(() => el.classList.remove("show"), 3600);
+  }
+
+  // =========================================================
+  // 11. 2D 裝潢編輯器（密碼 0816 + 五段縮放 + 放置/搬家/旋轉/移除 + 雲端保存）
+  // =========================================================
+  document.getElementById("admin-unlock-btn").addEventListener("click", () => {
+    if (state.adminUnlocked) {
+      const panel = document.getElementById("builder-panel");
+      panel.classList.toggle("show");
+      return;
+    }
+    const pwd = prompt("請輸入管理員密碼以開啟 2D 裝潢編輯：");
+    if (pwd === "0816") {
+      state.adminUnlocked = true;
+      document.getElementById("admin-unlock-btn").textContent = "🛠️ 裝潢面板";
+      document.getElementById("builder-panel").classList.add("show");
+      showPA("🔓 已解鎖 2D 裝潢編輯模式！點選格線可放置或搬移商品。");
+    } else if (pwd !== null) {
+      alert("密碼錯誤！");
+    }
+  });
+
+  // 五段縮放按鈕 (40x40 ~ 5x5)
+  document.querySelectorAll(".zoom-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".zoom-chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.cam2d.visibleTiles = parseInt(btn.dataset.grid) || 40;
+      if (state.cam2d.visibleTiles === 40) {
+        state.cam2d.centerX = 20;
+        state.cam2d.centerY = 20;
+      } else {
+        state.cam2d.centerX = state.player.x;
+        state.cam2d.centerY = state.player.y;
+      }
+    });
+  });
+
+  // 工具切換 (放置 / 搬家 / 移除)
+  document.querySelectorAll(".tool-btn[data-tool]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.editorTool = btn.dataset.tool;
+      state.movingObj = null;
+    });
+  });
+
+  // 四向旋轉 (0° / 90° / 180° / 270°)
+  const DIR_LABELS = ["0°正面", "90°朝右", "180°背面", "270°朝左"];
+  document.getElementById("btn-rotate-dir").addEventListener("click", () => {
+    state.placeDir = (state.placeDir + 1) % 4;
+    document.getElementById("btn-rotate-dir").textContent = `🔄 方向: ${DIR_LABELS[state.placeDir]}`;
+    if (state.movingObj) {
+      state.movingObj.dir = state.placeDir;
+    }
+  });
+
+  // 分類頁籤切換 (NPC / Store / Furniture)
+  document.querySelectorAll(".cat-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      state.editorCat = tab.dataset.cat;
+      renderPalette();
+    });
+  });
+
+  function renderPalette() {
+    const strip = document.getElementById("palette-strip");
+    const items = state.assetsList.filter(a => a.Category.toLowerCase() === state.editorCat.toLowerCase());
+    if (!items.length) {
+      strip.innerHTML = `<div style="font-size:12px;color:#9ca3af;padding:8px;">此分類尚無素材，請於試算表【和樂宮3D素材】新增。</div>`;
+      return;
+    }
+    if (!items.some(i => i.ID === state.selectedAssetId)) {
+      state.selectedAssetId = items[0].ID;
+    }
+    strip.innerHTML = items.map(item => {
+      const baseFile = String(item.File || "").split("|")[0].trim();
+      const selected = item.ID === state.selectedAssetId ? "selected" : "";
+      return `
+        <div class="palette-item ${selected}" data-id="${item.ID}">
+          <img src="./${encodeURIComponent(baseFile)}.png" alt="${item.Name}" onerror="this.style.opacity=0.25" />
+          <span>#${item.ID} ${item.Name}</span>
+        </div>
+      `;
+    }).join("");
+
+    strip.querySelectorAll(".palette-item").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedAssetId = parseInt(el.dataset.id);
+        state.editorTool = "place";
+        document.querySelectorAll(".tool-btn[data-tool]").forEach(b => b.classList.toggle("active", b.dataset.tool === "place"));
+        renderPalette();
+      });
+    });
+  }
+
+  // 雲端保存至【地圖配置3D】
+  document.getElementById("btn-cloud-save").addEventListener("click", async () => {
+    const code = encodeMapData();
+    localStorage.setItem(LOCAL_MAP_KEY, code);
+    showPA("☁️ 正在上傳賣場配置至雲端【地圖配置3D】...");
+    try {
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "saveMap3D",
+          password: "0816",
+          code,
+          publicEdit: false
+        })
+      });
+      const json = await res.json();
+      if (json && json.ok) {
+        showPA(`✅ 雲端保存成功！更新時間：${json.updatedAt}`);
+      } else {
+        showPA(`⚠️ 雲端回應異常：${json.msg || "請檢查網路"}`);
+      }
+    } catch (err) {
+      showPA("⚠️ 雲端連線失敗，已先幫您保存在本機瀏覽器！");
+    }
+  });
+
+  // =========================================================
+  // 12. 操控系統（3D 觸控轉向＋虛擬鍵＋點擊物件 / 2D 雙指縮放＋點擊編輯或尋路）
+  // =========================================================
+  document.querySelectorAll(".ctrl-btn[data-key]").forEach(btn => {
+    const k = btn.dataset.key;
+    const setDown = (e) => { e.preventDefault(); state.keys[k] = true; btn.classList.add("pressed"); };
+    const setUp = (e) => { e.preventDefault(); state.keys[k] = false; btn.classList.remove("pressed"); };
+    btn.addEventListener("touchstart", setDown, { passive: false });
+    btn.addEventListener("touchend", setUp);
+    btn.addEventListener("touchcancel", setUp);
+    btn.addEventListener("mousedown", setDown);
+    btn.addEventListener("mouseup", setUp);
+    btn.addEventListener("mouseleave", setUp);
+  });
+
+  document.getElementById("btn-interact").addEventListener("click", () => triggerInteraction());
+
+  window.addEventListener("keydown", e => {
+    if (document.getElementById("modal-backdrop").classList.contains("show")) return;
+    if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") state.keys.fwd = true;
+    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") state.keys.back = true;
+    if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") state.keys.turnL = true;
+    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") state.keys.turnR = true;
+    if (e.key === "q" || e.key === "Q") state.keys.strafeL = true;
+    if (e.key === "e" || e.key === "E") state.keys.strafeR = true;
+    if (e.key === " " || e.key === "Enter") triggerInteraction();
+  });
+
+  window.addEventListener("keyup", e => {
+    if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") state.keys.fwd = false;
+    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") state.keys.back = false;
+    if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") state.keys.turnL = false;
+    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") state.keys.turnR = false;
+    if (e.key === "q" || e.key === "Q") state.keys.strafeL = false;
+    if (e.key === "e" || e.key === "E") state.keys.strafeR = false;
+  });
+
+  // Canvas 觸控與滑鼠手勢（3D 左右滑動轉視角 / 2D 雙指縮放＋拖曳平移＋點擊格線）
+  let pointerDown = false;
+  let pointerMoved = false;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let pinchStartDist = 0;
+  let pinchStartTiles = 40;
+
+  canvas.addEventListener("touchstart", e => {
+    if (e.touches.length === 2 && state.view === "2d") {
+      pinchStartDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartTiles = state.cam2d.visibleTiles;
+      pointerMoved = true;
+      return;
+    }
+    if (e.touches.length === 1) {
+      pointerDown = true;
+      pointerMoved = false;
+      lastPointerX = e.touches[0].clientX;
+      lastPointerY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  canvas.addEventListener("touchmove", e => {
+    if (e.touches.length === 2 && state.view === "2d" && pinchStartDist > 0) {
+      const curDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scale = pinchStartDist / Math.max(10, curDist);
+      state.cam2d.visibleTiles = Math.max(5, Math.min(40, pinchStartTiles * scale));
+      return;
+    }
+    if (!pointerDown || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - lastPointerX;
+    const dy = e.touches[0].clientY - lastPointerY;
+    if (Math.hypot(dx, dy) > 6) pointerMoved = true;
+
+    if (state.view === "3d") {
+      state.player.angle += dx * 0.0065;
+    } else if (state.view === "2d") {
+      const { tilePx } = get2DTransform();
+      const dpr = canvas.width / canvas.clientWidth;
+      state.cam2d.centerX = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerX - (dx * dpr) / tilePx));
+      state.cam2d.centerY = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerY - (dy * dpr) / tilePx));
+    }
+    lastPointerX = e.touches[0].clientX;
+    lastPointerY = e.touches[0].clientY;
+  }, { passive: true });
+
+  canvas.addEventListener("touchend", e => {
+    if (pointerDown && !pointerMoved) {
+      handleCanvasTap(lastPointerX, lastPointerY);
+    }
+    pointerDown = false;
+    pinchStartDist = 0;
+  });
+
+  canvas.addEventListener("mousedown", e => {
+    pointerDown = true;
+    pointerMoved = false;
+    lastPointerX = e.clientX;
+    lastPointerY = e.clientY;
+  });
+
+  canvas.addEventListener("mousemove", e => {
+    if (!pointerDown) return;
+    const dx = e.clientX - lastPointerX;
+    const dy = e.clientY - lastPointerY;
+    if (Math.hypot(dx, dy) > 5) pointerMoved = true;
+
+    if (state.view === "3d") {
+      state.player.angle += dx * 0.005;
+    } else if (state.view === "2d") {
+      const { tilePx } = get2DTransform();
+      const dpr = canvas.width / canvas.clientWidth;
+      state.cam2d.centerX = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerX - (dx * dpr) / tilePx));
+      state.cam2d.centerY = Math.max(0, Math.min(MAP_SIZE, state.cam2d.centerY - (dy * dpr) / tilePx));
+    }
+    lastPointerX = e.clientX;
+    lastPointerY = e.clientY;
+  });
+
+  canvas.addEventListener("mouseup", e => {
+    if (pointerDown && !pointerMoved) {
+      handleCanvasTap(e.clientX, e.clientY);
+    }
+    pointerDown = false;
+  });
+
+  canvas.addEventListener("wheel", e => {
+    if (state.view !== "2d") return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 3 : -3;
+    state.cam2d.visibleTiles = Math.max(5, Math.min(40, state.cam2d.visibleTiles + delta));
+  }, { passive: false });
+
+  function handleCanvasTap(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = canvas.width / rect.width;
+    const cx = (clientX - rect.left) * dpr;
+    const cy = (clientY - rect.top) * dpr;
+
+    if (state.view === "3d") {
+      // 檢查是否直接點中畫面上的貓咪或家具
+      for (let i = renderedHitboxes3D.length - 1; i >= 0; i--) {
+        const box = renderedHitboxes3D[i];
+        if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
+          triggerInteraction(box.obj);
+          return;
+        }
+      }
+      return;
+    }
+
+    // 2D 模式點擊網格
+    const { tilePx, offsetX, offsetY } = get2DTransform();
+    const gx = Math.floor((cx - offsetX) / tilePx);
+    const gy = Math.floor((cy - offsetY) / tilePx);
+    if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
+
+    // 若已解鎖裝潢面板且面板開啟中 -> 執行放置 / 搬家 / 移除
+    const panelOpen = state.adminUnlocked && document.getElementById("builder-panel").classList.contains("show");
+    if (panelOpen) {
+      if (state.editorTool === "erase") {
+        const hit = getObjectAt(gx, gy);
+        if (hit) {
+          state.objects = state.objects.filter(o => o.uid !== hit.uid);
+          showPA("🧹 已移除該物件（記得按「雲端保存」寫入試算表）");
+        }
+      } else if (state.editorTool === "move") {
+        if (!state.movingObj) {
+          const hit = getObjectAt(gx, gy);
+          if (hit) {
+            state.movingObj = hit;
+            state.placeDir = hit.dir;
+            document.getElementById("btn-rotate-dir").textContent = `🔄 方向: ${DIR_LABELS[state.placeDir]}`;
+            showPA("✋ 已抓起物件！請點選新的目標格線放下（可按旋轉調整方向）。");
+          }
+        } else {
+          if (canPlaceAt(state.movingObj.id, gx, gy, state.placeDir, state.movingObj.uid)) {
+            state.movingObj.x = gx;
+            state.movingObj.y = gy;
+            state.movingObj.dir = state.placeDir;
+            state.movingObj = null;
+            showPA("✅ 已完成搬家定位！");
+          } else {
+            showPA("⚠️ 目標位置空間不足或與牆壁重疊！");
+          }
+        }
+      } else if (state.editorTool === "place") {
+        if (canPlaceAt(state.selectedAssetId, gx, gy, state.placeDir, null)) {
+          const maxUid = state.objects.reduce((m, o) => Math.max(m, o.uid), 0);
+          state.objects.push({
+            uid: maxUid + 1,
+            id: state.selectedAssetId,
+            x: gx,
+            y: gy,
+            dir: state.placeDir
+          });
+        } else {
+          showPA("⚠️ 此位置無法放置（空間不足或已有物件）！");
+        }
+      }
+      return;
+    }
+
+    // 一般逛店狀態下點擊 2D 地板 -> Kobe 自動走到該格
+    if (isCellWalkable(gx, gy)) {
+      state.player.path = findPath2D(Math.floor(state.player.x), Math.floor(state.player.y), gx, gy);
+    }
+  }
+
+  function canPlaceAt(assetId, gx, gy, dir, ignoreUid) {
+    const tempBounds = getObjectBounds({ id: assetId, x: gx, y: gy, dir });
+    for (let y = tempBounds.minY; y <= tempBounds.maxY; y++) {
+      for (let x = tempBounds.minX; x <= tempBounds.maxX; x++) {
+        if (!isCellWalkable(x, y, ignoreUid)) return false;
+      }
+    }
+    return true;
+  }
+
+  // 簡易 BFS 尋路（供 2D 點擊自動行走與遊戲模式 AI 顧客）
+  function findPath2D(sx, sy, tx, ty) {
+    if (sx === tx && sy === ty) return [];
+    const queue = [[sx, sy]];
+    const visited = new Set([`${sx},${sy}`]);
+    const parent = new Map();
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      if (cx === tx && cy === ty) {
+        const path = [];
+        let cur = `${tx},${ty}`;
+        while (cur !== `${sx},${sy}`) {
+          const [px, py] = cur.split(",").map(Number);
+          path.unshift({ x: px + 0.5, y: py + 0.5 });
+          cur = parent.get(cur);
+        }
+        return path;
+      }
+      for (const [dx, dy] of dirs) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        const key = `${nx},${ny}`;
+        if (!visited.has(key) && isCellWalkable(nx, ny)) {
+          visited.add(key);
+          parent.set(key, `${cx},${cy}`);
+          queue.push([nx, ny]);
+        }
+      }
+    }
+    return [];
+  }
+
+  // =========================================================
+  // 13. 遊戲迴圈（移動碰撞 + 雙收銀台 AI 顧客分流）
+  // =========================================================
+  function tryMovePlayer(dx, dy) {
+    const r = 0.28;
+    const nx = state.player.x + dx;
+    const ny = state.player.y + dy;
+
+    if (
+      isCellWalkable(Math.floor(nx - r), Math.floor(state.player.y - r)) &&
+      isCellWalkable(Math.floor(nx + r), Math.floor(state.player.y - r)) &&
+      isCellWalkable(Math.floor(nx - r), Math.floor(state.player.y + r)) &&
+      isCellWalkable(Math.floor(nx + r), Math.floor(state.player.y + r))
+    ) {
+      state.player.x = nx;
+    }
+
+    if (
+      isCellWalkable(Math.floor(state.player.x - r), Math.floor(ny - r)) &&
+      isCellWalkable(Math.floor(state.player.x + r), Math.floor(ny - r)) &&
+      isCellWalkable(Math.floor(state.player.x - r), Math.floor(ny + r)) &&
+      isCellWalkable(Math.floor(state.player.x + r), Math.floor(ny + r))
+    ) {
+      state.player.y = ny;
+    }
+
+    // 同步更新 2D 主角 Kobe 朝向 (0:下, 1:右, 2:上, 3:左)
+    const deg = ((state.player.angle * 180 / Math.PI) % 360 + 360) % 360;
+    if (deg >= 45 && deg < 135) state.player.dir2d = 0;
+    else if (deg >= 135 && deg < 225) state.player.dir2d = 3;
+    else if (deg >= 225 && deg < 315) state.player.dir2d = 2;
+    else state.player.dir2d = 1;
+  }
+
+  function updateGameSimulation(dt) {
+    if (state.mode !== "game") return;
+
+    state.game.spawnTimer += dt;
+    if (state.game.spawnTimer > 5.5 && state.game.guests.length < 8) {
+      state.game.spawnTimer = 0;
+      const colors = ["#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
+      // 隨機挑選賣場內一個可走位置逛逛
+      let tx = 10 + Math.floor(Math.random() * 20);
+      let ty = 8 + Math.floor(Math.random() * 22);
+      if (!isCellWalkable(tx, ty)) { tx = 20; ty = 25; }
+
+      state.game.guests.push({
+        id: Date.now() + Math.random(),
+        x: 19.5,
+        y: 38.2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        state: "browse",
+        browseTime: 6 + Math.random() * 6,
+        spend: 1200 + Math.floor(Math.random() * 48) * 100,
+        path: findPath2D(19, 38, tx, ty)
+      });
+      updateHudStatus();
+    }
+
+    for (let i = state.game.guests.length - 1; i >= 0; i--) {
+      const g = state.game.guests[i];
+      if (g.path && g.path.length > 0) {
+        const next = g.path[0];
+        const dx = next.x - g.x;
+        const dy = next.y - g.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 0.12) {
+          g.path.shift();
+        } else {
+          g.x += (dx / dist) * 2.1 * dt;
+          g.y += (dy / dist) * 2.1 * dt;
+        }
+      } else if (g.state === "browse") {
+        g.browseTime -= dt;
+        if (g.browseTime <= 0) {
+          // 雙收銀台自動分流 (ID 22 與 ID 23)
+          const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
+          let targetX = 33;
+          let targetY = 28;
+          if (posCounters.length > 0) {
+            const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
+            targetX = Math.max(1, chosen.x - 1);
+            targetY = chosen.y;
+          }
+          g.state = "queue";
+          g.queueTimer = 10;
+          g.path = findPath2D(Math.floor(g.x), Math.floor(g.y), targetX, targetY);
+          updateHudStatus();
+        }
+      } else if (g.state === "queue") {
+        g.queueTimer -= dt;
+        if (g.queueTimer <= 0) {
+          // 自動結帳完成
+          state.game.revenue += g.spend;
+          state.game.guests.splice(i, 1);
+          updateHudStatus();
+        }
+      }
+    }
+  }
+
+  function mainLoop(now) {
+    const dt = Math.min(0.05, (now - state.lastTime) / 1000);
+    state.lastTime = now;
+    const timeSec = now / 1000;
+
+    // 處理手動控制移動
+    const moveSpeed = 4.6 * dt;
+    const turnSpeed = 2.35 * dt;
+    let movedManually = false;
+
+    if (state.keys.turnL) { state.player.angle -= turnSpeed; movedManually = true; }
+    if (state.keys.turnR) { state.player.angle += turnSpeed; movedManually = true; }
+    if (state.keys.fwd) {
+      tryMovePlayer(Math.cos(state.player.angle) * moveSpeed, Math.sin(state.player.angle) * moveSpeed);
+      movedManually = true;
+    }
+    if (state.keys.back) {
+      tryMovePlayer(-Math.cos(state.player.angle) * moveSpeed * 0.75, -Math.sin(state.player.angle) * moveSpeed * 0.75);
+      movedManually = true;
+    }
+    if (state.keys.strafeL) {
+      tryMovePlayer(Math.cos(state.player.angle - Math.PI / 2) * moveSpeed * 0.85, Math.sin(state.player.angle - Math.PI / 2) * moveSpeed * 0.85);
+      movedManually = true;
+    }
+    if (state.keys.strafeR) {
+      tryMovePlayer(Math.cos(state.player.angle + Math.PI / 2) * moveSpeed * 0.85, Math.sin(state.player.angle + Math.PI / 2) * moveSpeed * 0.85);
+      movedManually = true;
+    }
+
+    if (movedManually) {
+      state.player.path = [];
+    } else if (state.player.path.length > 0) {
+      // 2D 點擊自動尋路行走
+      const target = state.player.path[0];
+      const dx = target.x - state.player.x;
+      const dy = target.y - state.player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.12) {
+        state.player.path.shift();
+      } else {
+        state.player.angle = Math.atan2(dy, dx);
+        tryMovePlayer((dx / dist) * moveSpeed, (dy / dist) * moveSpeed);
+      }
+    }
+
+    updateGameSimulation(dt);
+
+    if (state.view === "3d") {
+      render3D(timeSec);
+    } else {
+      render2D(timeSec);
+    }
+
+    requestAnimationFrame(mainLoop);
+  }
+
+  // 啟動系統
+  initDataPipeline();
+  checkIncomingBlindBox();
+  updateHudStatus();
+  requestAnimationFrame(mainLoop);
+})();
+</script>
+</body>
+</html>
