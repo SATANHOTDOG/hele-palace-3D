@@ -181,7 +181,7 @@
       flex: 1 1 auto;
       position: relative;
       overflow: hidden;
-      background: #1a1d24;
+      background: #eef2f6;
       touch-action: none;
     }
 
@@ -200,23 +200,23 @@
       width: 18px;
       height: 18px;
       pointer-events: none;
-      opacity: 0.75;
+      opacity: 0.78;
     }
     #crosshair::before, #crosshair::after {
       content: "";
       position: absolute;
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 0 3px #000;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.75);
     }
     #crosshair::before { top: 8px; left: 0; width: 18px; height: 2px; }
     #crosshair::after { left: 8px; top: 0; width: 2px; height: 18px; }
 
     #pa-banner {
       position: absolute;
-      top: 10px;
+      top: 44px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(17, 24, 39, 0.88);
+      background: rgba(17, 24, 39, 0.9);
       border: 1px solid var(--gold-dim);
       color: #fef3c7;
       padding: 5px 12px;
@@ -240,6 +240,26 @@
       inset: 0;
       pointer-events: none;
       z-index: 10;
+    }
+
+    #btn-floor-style {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      pointer-events: auto;
+      background: rgba(22, 26, 34, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #f9fafb;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    }
+    #btn-floor-style:active {
+      transform: scale(0.95);
     }
 
     .dpad-cluster {
@@ -305,12 +325,12 @@
       width: 106px;
       height: 48px;
       border-radius: 14px;
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.92));
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.92), rgba(217, 119, 6, 0.94));
       border: 1.5px solid #fde68a;
       color: #fff;
       font-size: 14px;
       font-weight: 800;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     /* 2D 縮放與裝潢工具列 */
@@ -841,6 +861,8 @@
 
     <!-- 3D 虛擬搖桿與互動鍵 -->
     <div id="controls-3d">
+      <button id="btn-floor-style" title="切換展間地板材質">🪨 地板: 大理石白</button>
+
       <div class="dpad-cluster">
         <button class="ctrl-btn" id="btn-fwd" data-key="fwd">▲</button>
         <button class="ctrl-btn" id="btn-back" data-key="back">▼</button>
@@ -945,6 +967,7 @@
   const state = {
     view: "3d",           // "3d" | "2d"
     mode: "browse",       // "browse" | "game"
+    floorStyle: "marble", // "marble" (大理石白) | "lightgray" (淺灰色)
     adminUnlocked: false,
     editorTool: "place",  // "place" | "move" | "erase"
     editorCat: "NPC",
@@ -1298,7 +1321,7 @@
   setInterval(rotateMarqueeItem, 20000);
 
   // =========================================================
-  // 6. 3D 射線投射 + 3D 立體貼面透視引擎（無虛擬頂蓋）
+  // 6. 3D 射線投射 + 3D 立體貼面透視引擎（明亮挑高展間＋大理石/淺灰地板）
   // =========================================================
   const canvas = document.getElementById("main-canvas");
   const ctx = canvas.getContext("2d");
@@ -1339,21 +1362,67 @@
     return { tx, tz };
   }
 
+  // 繪製隨視角旋轉移動的 3D 透視地板磁磚線
+  function drawFloorPerspectiveGrid(px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, isMarble) {
+    const NEAR_Z = 0.2;
+    const step = 2; // 每 2 格一道地磚接縫
+    ctx.save();
+    ctx.strokeStyle = isMarble ? "rgba(148, 163, 184, 0.24)" : "rgba(71, 85, 105, 0.26)";
+    ctx.lineWidth = 1;
+
+    const projectFloorSeg = (ax, ay, bx, by) => {
+      let cA = worldToCamera(ax, ay, px, py, dirX, dirY, planeX, planeY, invDet);
+      let cB = worldToCamera(bx, by, px, py, dirX, dirY, planeX, planeY, invDet);
+      if (cA.tz <= NEAR_Z && cB.tz <= NEAR_Z) return;
+      if (cA.tz < NEAR_Z) {
+        const t = (NEAR_Z - cA.tz) / (cB.tz - cA.tz);
+        cA = { tx: cA.tx + t * (cB.tx - cA.tx), tz: NEAR_Z };
+      } else if (cB.tz < NEAR_Z) {
+        const t = (NEAR_Z - cB.tz) / (cA.tz - cB.tz);
+        cB = { tx: cB.tx + t * (cA.tx - cB.tx), tz: NEAR_Z };
+      }
+      const sxA = (W / 2) * (1 + cA.tx / cA.tz);
+      const sxB = (W / 2) * (1 + cB.tx / cB.tz);
+      const syA = halfH + (H / cA.tz) * 0.45;
+      const syB = halfH + (H / cB.tz) * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(sxA, syA);
+      ctx.lineTo(sxB, syB);
+      ctx.stroke();
+    };
+
+    for (let g = 2; g < MAP_SIZE; g += step) {
+      projectFloorSeg(g, 1, g, MAP_SIZE - 1);
+      projectFloorSeg(1, g, MAP_SIZE - 1, g);
+    }
+    ctx.restore();
+  }
+
   function render3D(timeSec) {
     const W = canvas.width;
     const H = canvas.height;
     const halfH = H * 0.5;
+    const isMarble = (state.floorStyle === "marble");
 
+    // 1. 明亮現代展間天花板（消除原本黑底）
     const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
-    ceilGrad.addColorStop(0, "#14171d");
-    ceilGrad.addColorStop(1, "#262b35");
+    ceilGrad.addColorStop(0, "#dde3ec");
+    ceilGrad.addColorStop(0.55, "#edf1f7");
+    ceilGrad.addColorStop(1, "#f8fafc");
     ctx.fillStyle = ceilGrad;
     ctx.fillRect(0, 0, W, halfH);
 
+    // 2. 大理石白 / 淺灰色展間地板
     const floorGrad = ctx.createLinearGradient(0, halfH, 0, H);
-    floorGrad.addColorStop(0, "#4b515c");
-    floorGrad.addColorStop(0.35, "#6b7280");
-    floorGrad.addColorStop(1, "#8b929e");
+    if (isMarble) {
+      floorGrad.addColorStop(0, "#eef2f6");
+      floorGrad.addColorStop(0.45, "#f5f7fa");
+      floorGrad.addColorStop(1, "#ffffff");
+    } else {
+      floorGrad.addColorStop(0, "#c8cfd8");
+      floorGrad.addColorStop(0.45, "#d8dee6");
+      floorGrad.addColorStop(1, "#e5e9f0");
+    }
     ctx.fillStyle = floorGrad;
     ctx.fillRect(0, halfH, W, halfH);
 
@@ -1366,7 +1435,18 @@
     const py = state.player.y;
     const pAngle = state.player.angle;
 
-    // 1. 投射賣場外牆
+    const dirX = Math.cos(pAngle);
+    const dirY = Math.sin(pAngle);
+    const planeLen = Math.tan(fov / 2);
+    const planeX = -dirY * planeLen;
+    const planeY = dirX * planeLen;
+    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
+
+    // 繪製 3D 透視地磚線
+    drawFloorPerspectiveGrid(px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, isMarble);
+
+    // 3. 投射挑高賣場外牆（牆底對齊 halfH + lineH * 0.45，牆高拉高 2.1 倍）
+    const WALL_HEIGHT_MULT = 2.1;
     for (let i = 0; i < numRays; i++) {
       const cameraX = (2 * i / numRays) - 1;
       const rayAngle = pAngle + Math.atan(cameraX * Math.tan(fov / 2));
@@ -1420,21 +1500,31 @@
       const safeDist = Math.max(0.05, perpWallDist);
       zBuffer[i] = safeDist;
 
-      const lineH = H / safeDist;
-      const drawStart = halfH - lineH * 0.55;
+      const unitH = H / safeDist;
+      const wallBottom = halfH + unitH * 0.45;
+      const wallH = unitH * WALL_HEIGHT_MULT;
+      const wallTop = wallBottom - wallH;
 
-      const shade = Math.max(0.28, 1 - safeDist / 42) * (side === 1 ? 0.85 : 1);
-      const r = Math.floor(228 * shade);
-      const g = Math.floor(220 * shade);
-      const b = Math.floor(206 * shade);
+      // 保持原本溫潤米白牆色，提高環境亮度避免遠處發黑
+      const shade = Math.max(0.76, 1 - safeDist / 110) * (side === 1 ? 0.92 : 1);
+      const r = Math.floor(245 * shade);
+      const g = Math.floor(239 * shade);
+      const b = Math.floor(228 * shade);
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(i * stripW, drawStart, stripW + 0.8, lineH);
+      ctx.fillRect(i * stripW, wallTop, stripW + 0.8, wallH);
 
-      ctx.fillStyle = `rgb(${Math.floor(110 * shade)},${Math.floor(92 * shade)},${Math.floor(76 * shade)})`;
-      ctx.fillRect(i * stripW, drawStart + lineH * 0.92, stripW + 0.8, lineH * 0.08);
+      // 頂部天花板收邊線
+      const trimH = Math.max(2, unitH * 0.04);
+      ctx.fillStyle = `rgb(${Math.floor(215 * shade)},${Math.floor(208 * shade)},${Math.floor(196 * shade)})`;
+      ctx.fillRect(i * stripW, wallTop, stripW + 0.8, trimH);
+
+      // 底部原木踢腳板（保持與地面比例一致）
+      const baseH = unitH * 0.08;
+      ctx.fillStyle = `rgb(${Math.floor(155 * shade)},${Math.floor(132 * shade)},${Math.floor(110 * shade)})`;
+      ctx.fillRect(i * stripW, wallBottom - baseH, stripW + 0.8, baseH);
     }
 
-    // 2. 收集 3D 物件
+    // 4. 收集 3D 物件
     const renderList = [];
 
     state.objects.forEach(obj => {
@@ -1475,9 +1565,9 @@
 
         const faces = [];
         if (py > y1) faces.push({ faceDir: 0, ax: x0, ay: y1, bx: x1, by: y1, shade: 1.0 });
-        if (px > x1) faces.push({ faceDir: 1, ax: x1, ay: y1, bx: x1, by: y0, shade: 0.86 });
-        if (py < y0) faces.push({ faceDir: 2, ax: x1, ay: y0, bx: x0, by: y0, shade: 0.94 });
-        if (px < x0) faces.push({ faceDir: 3, ax: x0, ay: y0, bx: x0, by: y1, shade: 0.86 });
+        if (px > x1) faces.push({ faceDir: 1, ax: x1, ay: y1, bx: x1, by: y0, shade: 0.90 });
+        if (py < y0) faces.push({ faceDir: 2, ax: x1, ay: y0, bx: x0, by: y0, shade: 0.96 });
+        if (px < x0) faces.push({ faceDir: 3, ax: x0, ay: y0, bx: x0, by: y1, shade: 0.90 });
 
         faces.forEach(f => {
           const fDist = distPointToSegment(px, py, f.ax, f.ay, f.bx, f.by);
@@ -1518,13 +1608,6 @@
     }
 
     renderList.sort((a, b) => b.sortDist - a.sortDist);
-
-    const dirX = Math.cos(pAngle);
-    const dirY = Math.sin(pAngle);
-    const planeLen = Math.tan(fov / 2);
-    const planeX = -dirY * planeLen;
-    const planeY = dirX * planeLen;
-    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
 
     renderedHitboxes3D = [];
 
@@ -1704,20 +1787,13 @@
 
         ctx.drawImage(resolved.img, sxSrc, 0, swSrc, imgH, sMinX, drawTop, sW + 0.7, drawH);
       } else {
-        const distShade = Math.max(0.45, 1 - zMid / 40) * item.shade;
-        ctx.fillStyle = `rgb(${Math.floor(155 * distShade)},${Math.floor(122 * distShade)},${Math.floor(88 * distShade)})`;
+        const distShade = Math.max(0.68, 1 - zMid / 80) * item.shade;
+        ctx.fillStyle = `rgb(${Math.floor(175 * distShade)},${Math.floor(142 * distShade)},${Math.floor(108 * distShade)})`;
         ctx.fillRect(sMinX, drawTop, sW + 0.7, drawH);
-
-        const darkness = Math.min(0.45, (1 - item.shade) + zMid / 90);
-        if (darkness > 0.02) {
-          ctx.fillStyle = `rgba(0, 0, 0, ${darkness.toFixed(3)})`;
-          ctx.fillRect(sMinX, drawTop, sW + 0.7, drawH);
-        }
       }
     }
 
     if (anyDrawn) {
-      // 僅在圖片尚未載入時繪製佔位外框與名稱，有圖片時完全不畫外框線
       if (!hasTexture) {
         const unitHA = H / cA.tz;
         const unitHB = H / cB.tz;
@@ -1800,6 +1876,7 @@
     ctx.fillRect(0, 0, W, H);
 
     const { tilePx, offsetX, offsetY } = get2DTransform();
+    const isMarble = (state.floorStyle === "marble");
 
     for (let y = 0; y < MAP_SIZE; y++) {
       for (let x = 0; x < MAP_SIZE; x++) {
@@ -1808,10 +1885,14 @@
         if (sx + tilePx < 0 || sx > W || sy + tilePx < 0 || sy > H) continue;
 
         if (state.walls[y][x] === 1) {
-          ctx.fillStyle = "#5c4d42";
+          ctx.fillStyle = "#8c7a6b";
           ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
         } else {
-          ctx.fillStyle = ((x + y) % 2 === 0) ? "#d8dce3" : "#cfd5de";
+          if (isMarble) {
+            ctx.fillStyle = ((x + y) % 2 === 0) ? "#f8fafc" : "#eef2f6";
+          } else {
+            ctx.fillStyle = ((x + y) % 2 === 0) ? "#d8dce3" : "#cfd5de";
+          }
           ctx.fillRect(sx, sy, tilePx + 0.5, tilePx + 0.5);
           if (tilePx >= 10) {
             ctx.strokeStyle = "rgba(0,0,0,0.08)";
@@ -2408,8 +2489,19 @@
   }
 
   // =========================================================
-  // 10. 模式切換（3D逛逛 / 遊戲模式）與視角切換（3D / 2D）
+  // 10. 地板材質切換、模式切換（3D逛逛 / 遊戲模式）與視角切換（3D / 2D）
   // =========================================================
+  const btnFloorStyle = document.getElementById("btn-floor-style");
+  btnFloorStyle.addEventListener("click", () => {
+    if (state.floorStyle === "marble") {
+      state.floorStyle = "lightgray";
+      btnFloorStyle.textContent = "🪨 地板: 淺灰色";
+    } else {
+      state.floorStyle = "marble";
+      btnFloorStyle.textContent = "🪨 地板: 大理石白";
+    }
+  });
+
   const btnToggleGame = document.getElementById("btn-toggle-game");
   const btnToggleView = document.getElementById("btn-toggle-view");
   const modeBadge = document.getElementById("mode-badge");
