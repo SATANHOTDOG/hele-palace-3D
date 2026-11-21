@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>和樂宮 3D｜四向家具實拍輔助器</title>
+  <style>
+    :root {
+      --bg: #0f1217;
+      --panel: rgba(20, 24, 31, 0.92);
+      --border: #333b48;
+      --gold: #f5b942;
+      --green: #22c55e;
+      --cyan: #38bdf8;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --sub: #9ca3af;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100dvh;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ================= 頂部檔名與四向分頁 ================= */
+    #top-bar {
+      flex: 0 0 auto;
+      background: #161a22;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 20;
+    }
+
+    .name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .name-row label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    #base-filename {
+      flex: 1;
+      background: #0d1015;
+      border: 1px solid #444e5e;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 9px;
+      border-radius: 7px;
+      outline: none;
+      user-select: text;
+      min-width: 0;
+    }
+    #base-filename:focus { border-color: var(--gold); }
+
+    .btn-mini {
+      background: #252c37;
+      border: 1px solid #444e5e;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 9px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-mini.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .angle-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .angle-tab {
+      background: #1e232d;
+      border: 1.5px solid #353e4d;
+      border-radius: 8px;
+      padding: 5px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+    .angle-tab.active {
+      border-color: var(--gold);
+      background: rgba(245, 185, 66, 0.16);
+    }
+    .angle-tab.done {
+      border-color: var(--green);
+    }
+    .angle-tab .deg {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .angle-tab .fname {
+      font-size: 10px;
+      color: var(--sub);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .angle-tab .badge {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      font-size: 10px;
+    }
+
+    /* ================= 相機觀景窗區 ================= */
+    #viewfinder {
+      flex: 1 1 auto;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+      touch-action: none;
+    }
+
+    #cam-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 半透明洋蔥皮疊影 */
+    #ghost-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      mix-blend-mode: screen;
+    }
+
+    /* 輔助對齊線（垂直中線、黃色頭枕線、綠色地板線） */
+    #guide-center {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      border-left: 1.5px dashed rgba(255, 255, 255, 0.45);
+      pointer-events: none;
+    }
+
+    .guide-hline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      pointer-events: none;
+    }
+
+    #guide-top {
+      top: 18%;
+      background: var(--gold);
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+    }
+    #guide-top::after {
+      content: "▲ 椅背頂端對齊黃線";
+      position: absolute;
+      left: 10px;
+      top: -20px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--gold);
+      background: rgba(0, 0, 0, 0.68);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    #guide-floor {
+      top: 84%;
+      background: var(--green);
+      height: 2.5px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.95);
+    }
+    #guide-floor::after {
+      content: "▼ 底座接觸地面對齊綠線（自動切齊底邊）";
+      position: absolute;
+      left: 10px;
+      top: 5px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #86efac;
+      background: rgba(0, 0, 0, 0.72);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* 右側手腕傾角水平儀 */
+    #tilt-meter {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 170px;
+      background: rgba(15, 18, 24, 0.78);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      border-radius: 17px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      pointer-events: none;
+    }
+    #tilt-meter.aligned {
+      border-color: var(--green);
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+    }
+    .tilt-lbl {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--sub);
+    }
+    #tilt-track {
+      position: relative;
+      width: 4px;
+      flex: 1;
+      margin: 6px 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+    #tilt-target-zone {
+      position: absolute;
+      left: -8px;
+      width: 20px;
+      height: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 1.5px solid var(--gold);
+      border-radius: 4px;
+      background: rgba(245, 185, 66, 0.18);
+    }
+    #tilt-bubble {
+      position: absolute;
+      left: -6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--gold);
+      top: 50%;
+      transform: translateY(-50%);
+      transition: top 0.06s linear, background 0.15s;
+    }
+    #tilt-meter.aligned #tilt-bubble {
+      background: var(--green);
+    }
+
+    /* 左側線條微調滑桿（僅拍第 1 張前開放調整，拍完自動鎖定） */
+    #line-sliders {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(15, 18, 24, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 10px;
+      padding: 8px 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 12;
+    }
+    .slider-btn {
+      width: 32px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid #4b5563;
+      background: #1f2530;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .slider-tag {
+      font-size: 9px;
+      text-align: center;
+      color: var(--sub);
+      font-weight: 700;
+    }
+
+    #status-pill {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 18, 24, 0.85);
+      border: 1px solid var(--border);
+      color: #fef3c7;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      max-width: 92%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    /* ================= 底部快門與預覽列 ================= */
+    #bottom-bar {
+      flex: 0 0 auto;
+      background: #161a22;
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .side-action {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-sub {
+      width: 100%;
+      padding: 9px 6px;
+      border-radius: 10px;
+      border: 1px solid #444e5e;
+      background: #232a35;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-sub.ready {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      border-color: #4ade80;
+      color: #fff;
+    }
+
+    #shutter-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: #fff;
+      border: 5px solid #4b5563;
+      box-shadow: 0 0 0 3px rgba(245, 185, 66, 0.55);
+      cursor: pointer;
+      flex: 0 0 auto;
+      transition: transform 0.08s;
+    }
+    #shutter-btn:active {
+      transform: scale(0.92);
+      background: var(--gold);
+    }
+
+    /* ================= 四向並排檢查與下載視窗 ================= */
+    #review-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.86);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      z-index: 50;
+      backdrop-filter: blur(5px);
+    }
+    #review-modal.show { display: flex; }
+
+    .modal-card {
+      width: 100%;
+      max-width: 460px;
+      max-height: 90dvh;
+      background: #1a2029;
+      border: 1.5px solid var(--gold);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 11px 14px;
+      background: #222935;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-head h3 {
+      margin: 0;
+      font-size: 15px;
+      color: var(--gold);
+    }
+
+    .modal-body {
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .compare-card {
+      background: #101318;
+      border: 1px solid #353e4d;
+      border-radius: 10px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      position: relative;
+    }
+
+    .compare-img-wrap {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: repeating-conic-gradient(#1f242d 0% 25%, #171b22 0% 50%) 50% / 14px 14px;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .compare-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    /* 地板基準紅線驗證底邊是否齊平 */
+    .compare-img-wrap::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--green);
+    }
+
+    .compare-meta {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .btn-dl-one {
+      background: #0284c7;
+      border: none;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-dl-one:disabled {
+      background: #374151;
+      color: #9ca3af;
+    }
+
+    .btn-dl-all {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- 頂部設定與四向狀態 -->
+  <header id="top-bar">
+    <div class="name-row">
+      <label for="base-filename">素材檔名</label>
+      <input type="text" id="base-filename" value="LaZBoy" placeholder="例: LaZBoy" />
+      <button class="btn-mini" id="btn-ghost-toggle">👻 殘影: 關</button>
+      <button class="btn-mini" id="btn-reset-all">🗑️ 重拍</button>
+    </div>
+    <div class="angle-tabs" id="angle-tabs">
+      <div class="angle-tab active" data-idx="0">
+        <span class="badge" id="badge-0"></span>
+        <span class="deg">0° 正面</span>
+        <span class="fname" id="fname-0">LaZBoy.png</span>
+      </div>
+      <div class="angle-tab" data-idx="1">
+        <span class="badge" id="badge-1"></span>
+        <span class="deg">90° 右側</span>
+        <span class="fname" id="fname-1">LaZBoy_90.png</span>
+      </div>
+      <div class="angle-tab" data-idx="2">
+        <span class="badge" id="badge-2"></span>
+        <span class="deg">180° 背面</span>
+        <span class="fname" id="fname-2">LaZBoy_180.png</span>
+      </div>
+      <div class="angle-tab" data-idx="3">
+        <span class="badge" id="badge-3"></span>
+        <span class="deg">270° 左側</span>
+        <span class="fname" id="fname-3">LaZBoy_270.png</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 相機取景區 -->
+  <main id="viewfinder">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <img id="ghost-overlay" alt="" />
+
+    <div id="guide-center"></div>
+    <div class="guide-hline" id="guide-top"></div>
+    <div class="guide-hline" id="guide-floor"></div>
+
+    <div id="status-pill">請先拍「0° 正面」，拍下後將自動鎖定高度與手腕傾角</div>
+
+    <!-- 左側上下線微調（拍第一張前可用） -->
+    <div id="line-sliders">
+      <div class="slider-tag" style="color:#f5b942;">黃線</div>
+      <button class="slider-btn" id="top-up">▲</button>
+      <button class="slider-btn" id="top-dn">▼</button>
+      <div class="slider-tag" style="color:#22c55e;margin-top:4px;">綠線</div>
+      <button class="slider-btn" id="floor-up">▲</button>
+      <button class="slider-btn" id="floor-dn">▼</button>
+    </div>
+
+    <!-- 右側陀螺儀傾角水平儀 -->
+    <div id="tilt-meter">
+      <span class="tilt-lbl">傾角</span>
+      <div id="tilt-track">
+        <div id="tilt-target-zone"></div>
+        <div id="tilt-bubble"></div>
+      </div>
+      <span class="tilt-lbl" id="tilt-deg">--°</span>
+    </div>
+  </main>
+
+  <!-- 底部快門與預覽 -->
+  <footer id="bottom-bar">
+    <div class="side-action">
+      <button class="btn-sub" id="btn-sensor">📐 啟用傾角水平儀</button>
+    </div>
+    <button id="shutter-btn" title="拍照"></button>
+    <div class="side-action">
+      <button class="btn-sub" id="btn-review">🖼️ 檢視 / 下載 (0/4)</button>
+    </div>
+  </footer>
+</div>
+
+<!-- 四向並排驗證與下載視窗 -->
+<div id="review-modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>📐 四向地板對齊檢查與下載</h3>
+      <button class="btn-mini" id="btn-close-review">✕ 關閉</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:#d1d5db;line-height:1.45;">
+        四張圖片底緣已自動切齊綠線。請確認四張椅子的<strong>底座都貼齊底部綠線</strong>且<strong>高度一致</strong>（若某張歪掉，關掉視窗點該角度重拍即可）：
+      </div>
+      <div class="compare-grid" id="compare-grid"></div>
+      <button class="btn-dl-all" id="btn-dl-all">⬇️ 一鍵下載全部已拍 PNG 檔</button>
+      <div style="font-size:11px;color:#9ca3af;text-align:center;">
+        下載後用手機相簿長按主體去背（或 PhotoRoom / remove.bg 去背），直接上傳 GitHub 即可！
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ANGLES = [
+    { idx: 0, label: "0° 正面", suffix: "" },
+    { idx: 1, label: "90° 右側", suffix: "_90" },
+    { idx: 2, label: "180° 背面", suffix: "_180" },
+    { idx: 3, label: "270° 左側", suffix: "_270" }
+  ];
+
+  const state = {
+    currentIdx: 0,
+    shots: [null, null, null, null], // dataURL
+    topPct: 18,
+    floorPct: 84,
+    linesLocked: false,
+    ghostMode: 0, // 0: 關, 1: 25%, 2: 45%
+    currentBeta: null,
+    lockedBeta: null
+  };
+
+  const video = document.getElementById("cam-video");
+  const ghostImg = document.getElementById("ghost-overlay");
+  const guideTop = document.getElementById("guide-top");
+  const guideFloor = document.getElementById("guide-floor");
+  const statusPill = document.getElementById("status-pill");
+  const baseInput = document.getElementById("base-filename");
+
+  // 1. 啟動後置高畫質鏡頭
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      });
+      video.srcObject = stream;
+    } catch (err) {
+      statusPill.textContent = "⚠️ 無法開啟相機，請確認網址為 HTTPS 並允許相機權限";
+    }
+  }
+
+  // 2. 陀螺儀傾角水平儀（避免無腳架時手機前後俯仰角跑掉）
+  function handleOrientation(e) {
+    if (typeof e.beta !== "number") return;
+    state.currentBeta = e.beta;
+    const degEl = document.getElementById("tilt-deg");
+    const bubble = document.getElementById("tilt-bubble");
+    const meter = document.getElementById("tilt-meter");
+
+    degEl.textContent = `${Math.round(e.beta)}°`;
+
+    const refBeta = state.lockedBeta !== null ? state.lockedBeta : 82;
+    const diff = Math.max(-25, Math.min(25, e.beta - refBeta));
+    const pct = 50 + (diff / 25) * 42;
+    bubble.style.top = `${pct}%`;
+
+    if (Math.abs(e.beta - refBeta) <= 2.5) {
+      meter.classList.add("aligned");
+    } else {
+      meter.classList.remove("aligned");
+    }
+  }
+
+  window.addEventListener("deviceorientation", handleOrientation);
+  document.getElementById("btn-sensor").addEventListener("click", async () => {
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === "granted") {
+          window.addEventListener("deviceorientation", handleOrientation);
+          statusPill.textContent = "✅ 已啟用傾角水平儀！";
+        }
+      } catch (_) {}
+    } else {
+      statusPill.textContent = state.currentBeta !== null
+        ? `✅ 水平儀運作中（目前傾角 ${Math.round(state.currentBeta)}°）`
+        : "ℹ️ 請稍微傾斜手機測試右側傾角氣泡";
+    }
+  });
+
+  // 3. 檔名與分頁更新
+  function getCleanBaseName() {
+    return (baseInput.value.trim() || "Furniture").replace(/[^a-zA-Z0-9_-]/g, "");
+  }
+
+  function refreshTabsUI() {
+    const base = getCleanBaseName();
+    ANGLES.forEach(a => {
+      const tab = document.querySelector(`.angle-tab[data-idx="${a.idx}"]`);
+      const fnameEl = document.getElementById(`fname-${a.idx}`);
+      const badgeEl = document.getElementById(`badge-${a.idx}`);
+      fnameEl.textContent = `${base}${a.suffix}.png`;
+      tab.classList.toggle("active", state.currentIdx === a.idx);
+      const hasShot = Boolean(state.shots[a.idx]);
+      tab.classList.toggle("done", hasShot);
+      badgeEl.textContent = hasShot ? "✅" : "";
+    });
+
+    const count = state.shots.filter(Boolean).length;
+    const reviewBtn = document.getElementById("btn-review");
+    reviewBtn.textContent = `🖼️ 檢視 / 下載 (${count}/4)`;
+    reviewBtn.classList.toggle("ready", count === 4);
+
+    updateGhostOverlay();
+  }
+
+  baseInput.addEventListener("input", refreshTabsUI);
+
+  document.querySelectorAll(".angle-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      state.currentIdx = parseInt(tab.dataset.idx);
+      refreshTabsUI();
+      statusPill.textContent = `目前對準：${ANGLES[state.currentIdx].label}（椅腳踩綠線、椅背頂黃線）`;
+    });
+  });
+
+  // 4. 黃線 / 綠線微調（拍第 1 張後鎖定高度，確保四張比例一致）
+  function updateGuideLines() {
+    guideTop.style.top = `${state.topPct}%`;
+    guideFloor.style.top = `${state.floorPct}%`;
+  }
+
+  function adjustLine(which, delta) {
+    if (state.linesLocked) {
+      statusPill.textContent = "🔒 已依第 1 張鎖定線條位置，確保四張比例相同（按「重拍」可解鎖）";
+      return;
+    }
+    if (which === "top") {
+      state.topPct = Math.max(6, Math.min(state.floorPct - 15, state.topPct + delta));
+    } else {
+      state.floorPct = Math.min(94, Math.max(state.topPct + 15, state.floorPct + delta));
+    }
+    updateGuideLines();
+  }
+
+  document.getElementById("top-up").onclick = () => adjustLine("top", -2);
+  document.getElementById("top-dn").onclick = () => adjustLine("top", 2);
+  document.getElementById("floor-up").onclick = () => adjustLine("floor", -2);
+  document.getElementById("floor-dn").onclick = () => adjustLine("floor", 2);
+
+  // 5. 洋蔥皮殘影切換
+  const GHOST_LEVELS = [
+    { opacity: 0, label: "👻 殘影: 關" },
+    { opacity: 0.28, label: "👻 殘影: 28%" },
+    { opacity: 0.48, label: "👻 殘影: 48%" }
+  ];
+
+  function updateGhostOverlay() {
+    const refShot = state.shots[0] || state.shots.find(Boolean);
+    const level = GHOST_LEVELS[state.ghostMode];
+    if (refShot && level.opacity > 0 && state.currentIdx !== 0) {
+      ghostImg.src = refShot;
+      ghostImg.style.opacity = String(level.opacity);
+    } else {
+      ghostImg.style.opacity = "0";
+    }
+  }
+
+  document.getElementById("btn-ghost-toggle").addEventListener("click", () => {
+    state.ghostMode = (state.ghostMode + 1) % GHOST_LEVELS.length;
+    document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[state.ghostMode].label;
+    updateGhostOverlay();
+  });
+
+  // 6. 快門拍照（精準對應螢幕畫面並把底緣切齊綠色地板線）
+  document.getElementById("shutter-btn").addEventListener("click", () => {
+    if (!video.videoWidth || !video.videoHeight) {
+      statusPill.textContent = "⏳ 相機畫面尚未就緒，請稍候...";
+      return;
+    }
+
+    const vf = document.getElementById("viewfinder");
+    const viewW = vf.clientWidth;
+    const viewH = vf.clientHeight;
+
+    // 計算與 object-fit: cover 完全一致的裁切區域
+    const vidRatio = video.videoWidth / video.videoHeight;
+    const viewRatio = viewW / viewH;
+
+    let srcX = 0, srcY = 0, srcW = video.videoWidth, srcH = video.videoHeight;
+    if (vidRatio > viewRatio) {
+      srcW = video.videoHeight * viewRatio;
+      srcX = (video.videoWidth - srcW) / 2;
+    } else {
+      srcH = video.videoWidth / viewRatio;
+      srcY = (video.videoHeight - srcH) / 2;
+    }
+
+    // 底部直接切齊綠色地板線，上方保留頭枕黃線以上些許空間，確保四張底部零浮空
+    const topCropRatio = Math.max(0, (state.topPct - 8) / 100);
+    const botCropRatio = state.floorPct / 100;
+    const cropH = srcH * (botCropRatio - topCropRatio);
+    const cropY = srcY + srcH * topCropRatio;
+
+    const outH = Math.min(1200, Math.round(cropH));
+    const outW = Math.round(outH * (srcW / cropH));
+
+    const capCanvas = document.createElement("canvas");
+    capCanvas.width = outW;
+    capCanvas.height = outH;
+    const cctx = capCanvas.getContext("2d");
+    cctx.drawImage(video, srcX, cropY, srcW, cropH, 0, 0, outW, outH);
+
+    state.shots[state.currentIdx] = capCanvas.toDataURL("image/png");
+
+    // 拍下第一張時自動鎖定線條與手腕傾角，並自動開啟 28% 殘影輔助下一張
+    if (!state.linesLocked) {
+      state.linesLocked = true;
+      if (state.currentBeta !== null) {
+        state.lockedBeta = state.currentBeta;
+      }
+      if (state.ghostMode === 0) {
+        state.ghostMode = 1;
+        document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[1].label;
+      }
+    }
+
+    // 自動跳到下一張尚未拍攝的角度
+    const nextEmpty = state.shots.findIndex((s, i) => i > state.currentIdx && !s);
+    const anyEmpty = state.shots.findIndex(s => !s);
+    if (nextEmpty !== -1) {
+      state.currentIdx = nextEmpty;
+      statusPill.textContent = `✅ 已拍好！請移動至【${ANGLES[state.currentIdx].label}】並讓傾角變綠`;
+    } else if (anyEmpty !== -1) {
+      state.currentIdx = anyEmpty;
+      statusPill.textContent = `✅ 已拍好！請補拍【${ANGLES[state.currentIdx].label}】`;
+    } else {
+      statusPill.textContent = "🎉 四向全部拍攝完成！請點右下角「檢視 / 下載」";
+    }
+
+    refreshTabsUI();
+  });
+
+  // 7. 全部重拍
+  document.getElementById("btn-reset-all").addEventListener("click", () => {
+    if (!confirm("確定清空目前 4 張照片並解除高度鎖定嗎？")) return;
+    state.shots = [null, null, null, null];
+    state.currentIdx = 0;
+    state.linesLocked = false;
+    state.lockedBeta = null;
+    state.ghostMode = 0;
+    document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[0].label;
+    statusPill.textContent = "已重設！請先調整黃線與綠線對準椅子，再拍「0° 正面」";
+    refreshTabsUI();
+  });
+
+  // 8. 檢視並排對齊與下載
+  function triggerDownload(dataUrl, filename) {
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  document.getElementById("btn-review").addEventListener("click", () => {
+    const base = getCleanBaseName();
+    const grid = document.getElementById("compare-grid");
+    grid.innerHTML = ANGLES.map(a => {
+      const shot = state.shots[a.idx];
+      const fname = `${base}${a.suffix}.png`;
+      return `
+        <div class="compare-card">
+          <div class="compare-img-wrap">
+            ${shot ? `<img src="${shot}" alt="${a.label}" />` : `<span style="color:#6b7280;font-size:12px;margin:auto;">尚未拍攝</span>`}
+          </div>
+          <div class="compare-meta">
+            <span style="font-weight:700;color:#e5e7eb;">${a.label}</span>
+            <button class="btn-dl-one" data-idx="${a.idx}" ${shot ? "" : "disabled"}>⬇️ ${fname}</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    grid.querySelectorAll(".btn-dl-one").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx);
+        const shot = state.shots[idx];
+        if (shot) triggerDownload(shot, `${base}${ANGLES[idx].suffix}.png`);
+      });
+    });
+
+    document.getElementById("review-modal").classList.add("show");
+  });
+
+  document.getElementById("btn-close-review").addEventListener("click", () => {
+    document.getElementById("review-modal").classList.remove("show");
+  });
+
+  document.getElementById("btn-dl-all").addEventListener("click", () => {
+    const base = getCleanBaseName();
+    let delay = 0;
+    ANGLES.forEach(a => {
+      const shot = state.shots[a.idx];
+      if (!shot) return;
+      setTimeout(() => {
+        triggerDownload(shot, `${base}${a.suffix}.png`);
+      }, delay);
+      delay += 450;
+    });
+  });
+
+  updateGuideLines();
+  refreshTabsUI();
+  startCamera();
+})();
+</script>
+</body>
+</html>
