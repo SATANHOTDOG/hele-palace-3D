@@ -1083,6 +1083,7 @@
 
   // =========================================================
   // 3. 四向貼圖與多幀圖片快取引擎 (0 / 90 / 180 / 270)
+  //    逆時針繞拍對應：0°正面 -> 90°右側 -> 180°背面 -> 270°左側
   // =========================================================
   const imageCache = new Map();
 
@@ -1126,9 +1127,9 @@
     if (!baseFile) return null;
     let suffix = "";
     const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360;
-    if (deg >= 45 && deg < 135) suffix = "_90";
+    if (deg >= 45 && deg < 135) suffix = "_270";
     else if (deg >= 135 && deg < 225) suffix = "_180";
-    else if (deg >= 225 && deg < 315) suffix = "_270";
+    else if (deg >= 225 && deg < 315) suffix = "_90";
     return getSpriteImage(baseFile, suffix, true);
   }
 
@@ -1148,7 +1149,7 @@
     const baseFile = files[frameIdx];
 
     const rel = (faceDir - (asset._objDir || 0) + 4) % 4;
-    const suffixes = ["", "_90", "_180", "_270"];
+    const suffixes = ["", "_270", "_180", "_90"];
     return getSpriteImage(baseFile, suffixes[rel], true);
   }
 
@@ -3134,7 +3135,7 @@
     });
   });
 
-  const DIR_LABELS = ["0°正面", "90°朝右", "180°背面", "270°朝左"];
+  const DIR_LABELS = ["0°正面", "90°右側", "180°背面", "270°左側"];
   document.getElementById("btn-rotate-dir").addEventListener("click", () => {
     state.placeDir = (state.placeDir + 1) % 4;
     document.getElementById("btn-rotate-dir").textContent = `🔄 方向: ${DIR_LABELS[state.placeDir]}`;
