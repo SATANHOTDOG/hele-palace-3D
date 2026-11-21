@@ -3,19 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>和樂宮 3D｜四向家具實拍輔助器</title>
+  <title>和樂宮 3D｜四向家具精準裁切相機</title>
   <style>
     :root {
-      --bg: #0f1217;
-      --panel: rgba(20, 24, 31, 0.92);
+      --bg: #0e1116;
       --border: #333b48;
       --gold: #f5b942;
       --green: #22c55e;
       --cyan: #38bdf8;
-      --danger: #ef4444;
       --text: #f3f4f6;
       --sub: #9ca3af;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
     }
 
     * {
@@ -43,16 +42,16 @@
       padding-bottom: var(--safe-bottom);
     }
 
-    /* ================= 頂部檔名與四向分頁 ================= */
+    /* ================= 頂部設定列 ================= */
     #top-bar {
       flex: 0 0 auto;
       background: #161a22;
       border-bottom: 1px solid var(--border);
-      padding: 8px 10px;
+      padding: 6px 10px;
       display: flex;
       flex-direction: column;
-      gap: 7px;
-      z-index: 20;
+      gap: 5px;
+      z-index: 25;
     }
 
     .name-row {
@@ -75,8 +74,8 @@
       color: #fff;
       font-size: 13px;
       font-weight: 700;
-      padding: 6px 9px;
-      border-radius: 7px;
+      padding: 4px 8px;
+      border-radius: 6px;
       outline: none;
       user-select: text;
       min-width: 0;
@@ -87,17 +86,12 @@
       background: #252c37;
       border: 1px solid #444e5e;
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 6px 9px;
-      border-radius: 7px;
+      padding: 5px 8px;
+      border-radius: 6px;
       cursor: pointer;
       white-space: nowrap;
-    }
-    .btn-mini.active {
-      background: rgba(56, 189, 248, 0.22);
-      border-color: var(--cyan);
-      color: var(--cyan);
     }
 
     .angle-tabs {
@@ -109,12 +103,11 @@
     .angle-tab {
       background: #1e232d;
       border: 1.5px solid #353e4d;
-      border-radius: 8px;
-      padding: 5px 4px;
+      border-radius: 7px;
+      padding: 3px 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
       cursor: pointer;
       position: relative;
     }
@@ -126,12 +119,12 @@
       border-color: var(--green);
     }
     .angle-tab .deg {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       color: #fff;
     }
     .angle-tab .fname {
-      font-size: 10px;
+      font-size: 9.5px;
       color: var(--sub);
       max-width: 100%;
       overflow: hidden;
@@ -140,12 +133,20 @@
     }
     .angle-tab .badge {
       position: absolute;
-      top: 3px;
-      right: 4px;
-      font-size: 10px;
+      top: 2px;
+      right: 3px;
+      font-size: 9px;
     }
 
-    /* ================= 相機觀景窗區 ================= */
+    /* ================= 主體工作區（直向：上下排；橫向：左右排） ================= */
+    #main-stage {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      position: relative;
+    }
+
     #viewfinder {
       flex: 1 1 auto;
       position: relative;
@@ -161,212 +162,180 @@
       display: block;
     }
 
-    /* 半透明洋蔥皮疊影 */
     #ghost-overlay {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
       mix-blend-mode: screen;
+      z-index: 4;
     }
 
-    /* 輔助對齊線（垂直中線、黃色頭枕線、綠色地板線） */
-    #guide-center {
+    /* ================= 四邊暗化遮罩（框外變暗，框內即最終成品） ================= */
+    .crop-mask {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.62);
+      pointer-events: none;
+      z-index: 5;
+    }
+    #mask-top { top: 0; left: 0; right: 0; }
+    #mask-bottom { bottom: 0; left: 0; right: 0; }
+    #mask-left { left: 0; }
+    #mask-right { right: 0; }
+
+    /* 中央垂直與水平參考線 */
+    #guide-center-v {
       position: absolute;
       top: 0;
       bottom: 0;
       left: 50%;
       width: 1px;
-      border-left: 1.5px dashed rgba(255, 255, 255, 0.45);
+      border-left: 1px dashed rgba(255, 255, 255, 0.35);
       pointer-events: none;
+      z-index: 6;
     }
 
-    .guide-hline {
+    #roll-level-wrap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 110px;
+      height: 20px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+    }
+    #roll-bar {
+      width: 84px;
+      height: 2.5px;
+      border-radius: 2px;
+      background: rgba(245, 185, 66, 0.8);
+      transition: transform 0.06s linear, background 0.15s;
+    }
+    #roll-bar.level {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+    }
+
+    /* ================= 可拖曳的四條裁切線 ================= */
+    .drag-hline {
       position: absolute;
       left: 0;
       right: 0;
-      height: 2px;
-      pointer-events: none;
-    }
-
-    #guide-top {
-      top: 18%;
-      background: var(--gold);
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
-    }
-    #guide-top::after {
-      content: "▲ 椅背頂端對齊黃線";
-      position: absolute;
-      left: 10px;
-      top: -20px;
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--gold);
-      background: rgba(0, 0, 0, 0.68);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    #guide-floor {
-      top: 84%;
-      background: var(--green);
-      height: 2.5px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.95);
-    }
-    #guide-floor::after {
-      content: "▼ 底座接觸地面對齊綠線（自動切齊底邊）";
-      position: absolute;
-      left: 10px;
-      top: 5px;
-      font-size: 11px;
-      font-weight: 800;
-      color: #86efac;
-      background: rgba(0, 0, 0, 0.72);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    /* 右側手腕傾角水平儀 */
-    #tilt-meter {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 34px;
-      height: 170px;
-      background: rgba(15, 18, 24, 0.78);
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
-      border-radius: 17px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      pointer-events: none;
-    }
-    #tilt-meter.aligned {
-      border-color: var(--green);
-      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-    }
-    .tilt-lbl {
-      font-size: 9px;
-      font-weight: 800;
-      color: var(--sub);
-    }
-    #tilt-track {
-      position: relative;
-      width: 4px;
-      flex: 1;
-      margin: 6px 0;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-    }
-    #tilt-target-zone {
-      position: absolute;
-      left: -8px;
-      width: 20px;
-      height: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 1.5px solid var(--gold);
-      border-radius: 4px;
-      background: rgba(245, 185, 66, 0.18);
-    }
-    #tilt-bubble {
-      position: absolute;
-      left: -6px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--gold);
-      top: 50%;
-      transform: translateY(-50%);
-      transition: top 0.06s linear, background 0.15s;
-    }
-    #tilt-meter.aligned #tilt-bubble {
-      background: var(--green);
-    }
-
-    /* 左側線條微調滑桿（僅拍第 1 張前開放調整，拍完自動鎖定） */
-    #line-sliders {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(15, 18, 24, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 10px;
-      padding: 8px 7px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      height: 32px;
+      margin-top: -16px;
+      cursor: ns-resize;
       z-index: 12;
+      display: flex;
+      align-items: center;
     }
-    .slider-btn {
-      width: 32px;
-      height: 28px;
-      border-radius: 6px;
-      border: 1px solid #4b5563;
-      background: #1f2530;
-      color: #fff;
-      font-size: 12px;
+    .drag-hline .bar {
+      width: 100%;
+      height: 2.5px;
+    }
+
+    #line-top .bar { background: var(--gold); box-shadow: 0 0 6px #000; }
+    #line-top .tag {
+      position: absolute;
+      left: 8px;
+      top: -12px;
+      font-size: 10.5px;
       font-weight: 800;
-      cursor: pointer;
+      color: #111;
+      background: var(--gold);
+      padding: 1px 6px;
+      border-radius: 4px;
+      pointer-events: none;
     }
-    .slider-tag {
-      font-size: 9px;
-      text-align: center;
-      color: var(--sub);
-      font-weight: 700;
+
+    #line-bottom .bar { background: var(--green); box-shadow: 0 0 6px #000; }
+    #line-bottom .tag {
+      position: absolute;
+      left: 8px;
+      top: 17px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #052e16;
+      background: var(--green);
+      padding: 1px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .drag-vline {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 32px;
+      margin-left: -16px;
+      cursor: ew-resize;
+      z-index: 12;
+      display: flex;
+      justify-content: center;
+    }
+    .drag-vline .bar {
+      height: 100%;
+      width: 2.5px;
+      background: var(--cyan);
+      box-shadow: 0 0 6px #000;
+    }
+    .drag-vline .vtag {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      font-weight: 800;
+      color: #082f49;
+      background: var(--cyan);
+      padding: 3px 4px;
+      border-radius: 4px;
+      pointer-events: none;
     }
 
     #status-pill {
       position: absolute;
-      top: 10px;
+      top: 8px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 18, 24, 0.85);
+      background: rgba(15, 18, 24, 0.88);
       border: 1px solid var(--border);
       color: #fef3c7;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 999px;
       white-space: nowrap;
-      max-width: 92%;
+      max-width: 94%;
       overflow: hidden;
       text-overflow: ellipsis;
       pointer-events: none;
+      z-index: 16;
     }
 
-    /* ================= 底部快門與預覽列 ================= */
-    #bottom-bar {
+    /* ================= 快門與操作列 ================= */
+    #control-bar {
       flex: 0 0 auto;
       background: #161a22;
       border-top: 1px solid var(--border);
-      padding: 10px 14px;
+      padding: 8px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-    }
-
-    .side-action {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+      z-index: 20;
     }
 
     .btn-sub {
-      width: 100%;
+      flex: 1;
       padding: 9px 6px;
-      border-radius: 10px;
+      border-radius: 9px;
       border: 1px solid #444e5e;
       background: #232a35;
       color: var(--text);
@@ -374,6 +343,7 @@
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
+      text-align: center;
     }
     .btn-sub.ready {
       background: linear-gradient(135deg, #16a34a, #15803d);
@@ -382,8 +352,8 @@
     }
 
     #shutter-btn {
-      width: 68px;
-      height: 68px;
+      width: 62px;
+      height: 62px;
       border-radius: 50%;
       background: #fff;
       border: 5px solid #4b5563;
@@ -397,11 +367,41 @@
       background: var(--gold);
     }
 
+    /* 橫向握持時自動把快門列移到右側，保留最大上下取景高度 */
+    @media (orientation: landscape) {
+      #top-bar {
+        flex-direction: row;
+        align-items: center;
+        padding: 4px 10px;
+        gap: 8px;
+      }
+      .name-row { flex: 0 0 240px; }
+      .angle-tabs { flex: 1; }
+      .angle-tab { padding: 2px 4px; }
+      #main-stage { flex-direction: row; }
+      #control-bar {
+        flex-direction: column;
+        width: 88px;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        padding: 10px 6px;
+        padding-right: calc(6px + var(--safe-right));
+      }
+      .btn-sub {
+        flex: 0 0 auto;
+        width: 100%;
+        font-size: 11px;
+        padding: 8px 4px;
+        white-space: normal;
+        line-height: 1.25;
+      }
+    }
+
     /* ================= 四向並排檢查與下載視窗 ================= */
     #review-modal {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.86);
+      background: rgba(0, 0, 0, 0.88);
       display: none;
       align-items: center;
       justify-content: center;
@@ -413,8 +413,8 @@
 
     .modal-card {
       width: 100%;
-      max-width: 460px;
-      max-height: 90dvh;
+      max-width: 480px;
+      max-height: 92dvh;
       background: #1a2029;
       border: 1.5px solid var(--gold);
       border-radius: 14px;
@@ -424,7 +424,7 @@
     }
 
     .modal-head {
-      padding: 11px 14px;
+      padding: 10px 14px;
       background: #222935;
       display: flex;
       align-items: center;
@@ -460,12 +460,11 @@
       flex-direction: column;
       align-items: center;
       gap: 5px;
-      position: relative;
     }
 
     .compare-img-wrap {
       width: 100%;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 4 / 3;
       background: repeating-conic-gradient(#1f242d 0% 25%, #171b22 0% 50%) 50% / 14px 14px;
       border-radius: 6px;
       overflow: hidden;
@@ -479,7 +478,6 @@
       height: 100%;
       object-fit: contain;
     }
-    /* 地板基準紅線驗證底邊是否齊平 */
     .compare-img-wrap::after {
       content: "";
       position: absolute;
@@ -503,9 +501,9 @@
       background: #0284c7;
       border: none;
       color: #fff;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      padding: 4px 8px;
+      padding: 4px 7px;
       border-radius: 5px;
       cursor: pointer;
     }
@@ -532,10 +530,10 @@
   <!-- 頂部設定與四向狀態 -->
   <header id="top-bar">
     <div class="name-row">
-      <label for="base-filename">素材檔名</label>
+      <label for="base-filename">檔名</label>
       <input type="text" id="base-filename" value="LaZBoy" placeholder="例: LaZBoy" />
       <button class="btn-mini" id="btn-ghost-toggle">👻 殘影: 關</button>
-      <button class="btn-mini" id="btn-reset-all">🗑️ 重拍</button>
+      <button class="btn-mini" id="btn-reset-all">🗑️ 重設</button>
     </div>
     <div class="angle-tabs" id="angle-tabs">
       <div class="angle-tab active" data-idx="0">
@@ -561,65 +559,66 @@
     </div>
   </header>
 
-  <!-- 相機取景區 -->
-  <main id="viewfinder">
-    <video id="cam-video" autoplay playsinline muted></video>
-    <img id="ghost-overlay" alt="" />
+  <div id="main-stage">
+    <!-- 相機取景區 -->
+    <main id="viewfinder">
+      <video id="cam-video" autoplay playsinline muted></video>
+      <img id="ghost-overlay" alt="" />
 
-    <div id="guide-center"></div>
-    <div class="guide-hline" id="guide-top"></div>
-    <div class="guide-hline" id="guide-floor"></div>
+      <!-- 四邊暗化遮罩 -->
+      <div class="crop-mask" id="mask-top"></div>
+      <div class="crop-mask" id="mask-bottom"></div>
+      <div class="crop-mask" id="mask-left"></div>
+      <div class="crop-mask" id="mask-right"></div>
 
-    <div id="status-pill">請先拍「0° 正面」，拍下後將自動鎖定高度與手腕傾角</div>
+      <div id="guide-center-v"></div>
+      <div id="roll-level-wrap"><div id="roll-bar"></div></div>
 
-    <!-- 左側上下線微調（拍第一張前可用） -->
-    <div id="line-sliders">
-      <div class="slider-tag" style="color:#f5b942;">黃線</div>
-      <button class="slider-btn" id="top-up">▲</button>
-      <button class="slider-btn" id="top-dn">▼</button>
-      <div class="slider-tag" style="color:#22c55e;margin-top:4px;">綠線</div>
-      <button class="slider-btn" id="floor-up">▲</button>
-      <button class="slider-btn" id="floor-dn">▼</button>
-    </div>
-
-    <!-- 右側陀螺儀傾角水平儀 -->
-    <div id="tilt-meter">
-      <span class="tilt-lbl">傾角</span>
-      <div id="tilt-track">
-        <div id="tilt-target-zone"></div>
-        <div id="tilt-bubble"></div>
+      <!-- 四條可拖曳裁切線 -->
+      <div class="drag-hline" id="line-top">
+        <div class="bar"></div>
+        <span class="tag">▲ 拖曳貼齊椅背頂端</span>
       </div>
-      <span class="tilt-lbl" id="tilt-deg">--°</span>
-    </div>
-  </main>
+      <div class="drag-hline" id="line-bottom">
+        <div class="bar"></div>
+        <span class="tag">▼ 拖曳貼齊底座觸地線</span>
+      </div>
+      <div class="drag-vline" id="line-left">
+        <div class="bar"></div>
+        <span class="vtag">◀</span>
+      </div>
+      <div class="drag-vline" id="line-right">
+        <div class="bar"></div>
+        <span class="vtag">▶</span>
+      </div>
 
-  <!-- 底部快門與預覽 -->
-  <footer id="bottom-bar">
-    <div class="side-action">
-      <button class="btn-sub" id="btn-sensor">📐 啟用傾角水平儀</button>
-    </div>
-    <button id="shutter-btn" title="拍照"></button>
-    <div class="side-action">
-      <button class="btn-sub" id="btn-review">🖼️ 檢視 / 下載 (0/4)</button>
-    </div>
-  </footer>
+      <div id="status-pill">拖動四邊框線緊貼沙發四邊（亮區即為最終裁切成品）</div>
+    </main>
+
+    <!-- 快門與預覽列 -->
+    <footer id="control-bar">
+      <button class="btn-sub" id="btn-sensor">📐 水平儀</button>
+      <button id="shutter-btn" title="拍照"></button>
+      <button class="btn-sub" id="btn-review">🖼️ 檢視/下載 (0/4)</button>
+    </footer>
+  </div>
 </div>
 
-<!-- 四向並排驗證與下載視窗 -->
+<!-- 四向並排檢查與下載視窗 -->
 <div id="review-modal">
   <div class="modal-card">
     <div class="modal-head">
-      <h3>📐 四向地板對齊檢查與下載</h3>
+      <h3>📐 四向精準裁切檢查與打包下載</h3>
       <button class="btn-mini" id="btn-close-review">✕ 關閉</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:#d1d5db;line-height:1.45;">
-        四張圖片底緣已自動切齊綠線。請確認四張椅子的<strong>底座都貼齊底部綠線</strong>且<strong>高度一致</strong>（若某張歪掉，關掉視窗點該角度重拍即可）：
+        以下四張即為框線內裁切出的成品（底邊已精準切齊綠線）。確認無誤後點下方按鈕打包下載 ZIP：
       </div>
       <div class="compare-grid" id="compare-grid"></div>
-      <button class="btn-dl-all" id="btn-dl-all">⬇️ 一鍵下載全部已拍 PNG 檔</button>
+      <button class="btn-dl-all" id="btn-dl-zip">📦 一鍵打包下載 ZIP（4張全收）</button>
       <div style="font-size:11px;color:#9ca3af;text-align:center;">
-        下載後用手機相簿長按主體去背（或 PhotoRoom / remove.bg 去背），直接上傳 GitHub 即可！
+        下載 ZIP 後在手機「我的檔案」解壓縮，再用相簿長按沙發主體去背（或 PhotoRoom）即可上傳 GitHub。
       </div>
     </div>
   </div>
@@ -636,23 +635,32 @@
 
   const state = {
     currentIdx: 0,
-    shots: [null, null, null, null], // dataURL
-    topPct: 18,
-    floorPct: 84,
-    linesLocked: false,
-    ghostMode: 0, // 0: 關, 1: 25%, 2: 45%
-    currentBeta: null,
-    lockedBeta: null
+    shots: [null, null, null, null],
+    topPct: 22,
+    bottomPct: 82,
+    leftPct: 12,
+    rightPct: 88,
+    verticalLocked: false,
+    ghostMode: 0
   };
 
   const video = document.getElementById("cam-video");
+  const viewfinder = document.getElementById("viewfinder");
   const ghostImg = document.getElementById("ghost-overlay");
-  const guideTop = document.getElementById("guide-top");
-  const guideFloor = document.getElementById("guide-floor");
   const statusPill = document.getElementById("status-pill");
   const baseInput = document.getElementById("base-filename");
 
-  // 1. 啟動後置高畫質鏡頭
+  const lineTop = document.getElementById("line-top");
+  const lineBottom = document.getElementById("line-bottom");
+  const lineLeft = document.getElementById("line-left");
+  const lineRight = document.getElementById("line-right");
+
+  const maskTop = document.getElementById("mask-top");
+  const maskBottom = document.getElementById("mask-bottom");
+  const maskLeft = document.getElementById("mask-left");
+  const maskRight = document.getElementById("mask-right");
+
+  // 1. 啟動後置鏡頭
   async function startCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -669,26 +677,15 @@
     }
   }
 
-  // 2. 陀螺儀傾角水平儀（避免無腳架時手機前後俯仰角跑掉）
+  // 2. 左右水平儀（避免寬沙發拍歪切腳）
   function handleOrientation(e) {
-    if (typeof e.beta !== "number") return;
-    state.currentBeta = e.beta;
-    const degEl = document.getElementById("tilt-deg");
-    const bubble = document.getElementById("tilt-bubble");
-    const meter = document.getElementById("tilt-meter");
-
-    degEl.textContent = `${Math.round(e.beta)}°`;
-
-    const refBeta = state.lockedBeta !== null ? state.lockedBeta : 82;
-    const diff = Math.max(-25, Math.min(25, e.beta - refBeta));
-    const pct = 50 + (diff / 25) * 42;
-    bubble.style.top = `${pct}%`;
-
-    if (Math.abs(e.beta - refBeta) <= 2.5) {
-      meter.classList.add("aligned");
-    } else {
-      meter.classList.remove("aligned");
-    }
+    if (typeof e.beta !== "number" || typeof e.gamma !== "number") return;
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const roll = isLandscape ? e.beta : e.gamma;
+    const rollBar = document.getElementById("roll-bar");
+    const clamped = Math.max(-20, Math.min(20, roll));
+    rollBar.style.transform = `rotate(${-clamped}deg)`;
+    rollBar.classList.toggle("level", Math.abs(roll) <= 1.8);
   }
 
   window.addEventListener("deviceorientation", handleOrientation);
@@ -698,17 +695,87 @@
         const res = await DeviceOrientationEvent.requestPermission();
         if (res === "granted") {
           window.addEventListener("deviceorientation", handleOrientation);
-          statusPill.textContent = "✅ 已啟用傾角水平儀！";
+          statusPill.textContent = "✅ 已啟用水平儀（中央橫線變綠代表端平）";
         }
       } catch (_) {}
     } else {
-      statusPill.textContent = state.currentBeta !== null
-        ? `✅ 水平儀運作中（目前傾角 ${Math.round(state.currentBeta)}°）`
-        : "ℹ️ 請稍微傾斜手機測試右側傾角氣泡";
+      statusPill.textContent = "✅ 水平儀運作中（中央橫線變綠代表手機左右端平）";
     }
   });
 
-  // 3. 檔名與分頁更新
+  // 3. 更新四邊框線與暗化遮罩（精準 1:1 呈現實際裁切範圍）
+  function updateCropBoxUI() {
+    lineTop.style.top = `${state.topPct}%`;
+    lineBottom.style.top = `${state.bottomPct}%`;
+    lineLeft.style.left = `${state.leftPct}%`;
+    lineRight.style.left = `${state.rightPct}%`;
+
+    maskTop.style.height = `${state.topPct}%`;
+    maskBottom.style.height = `${100 - state.bottomPct}%`;
+
+    const midTop = `${state.topPct}%`;
+    const midHeight = `${state.bottomPct - state.topPct}%`;
+    maskLeft.style.top = midTop;
+    maskLeft.style.height = midHeight;
+    maskLeft.style.width = `${state.leftPct}%`;
+
+    maskRight.style.top = midTop;
+    maskRight.style.height = midHeight;
+    maskRight.style.width = `${100 - state.rightPct}%`;
+
+    // 洋蔥皮殘影對齊在框內位置
+    ghostImg.style.left = `${state.leftPct}%`;
+    ghostImg.style.top = `${state.topPct}%`;
+    ghostImg.style.width = `${state.rightPct - state.leftPct}%`;
+    ghostImg.style.height = `${state.bottomPct - state.topPct}%`;
+  }
+
+  function bindEdgeDrag(el, edge) {
+    let dragging = false;
+    const onMove = (clientX, clientY) => {
+      if (!dragging) return;
+      const rect = viewfinder.getBoundingClientRect();
+      const xPct = ((clientX - rect.left) / rect.width) * 100;
+      const yPct = ((clientY - rect.top) / rect.height) * 100;
+
+      if (edge === "top" || edge === "bottom") {
+        if (state.verticalLocked) {
+          statusPill.textContent = "🔒 上下高度已依第 1 張鎖定（左右藍線仍可調整，或按「重設」解鎖）";
+          dragging = false;
+          return;
+        }
+        if (edge === "top") {
+          state.topPct = Math.max(2, Math.min(state.bottomPct - 10, yPct));
+        } else {
+          state.bottomPct = Math.min(98, Math.max(state.topPct + 10, yPct));
+        }
+      } else if (edge === "left") {
+        state.leftPct = Math.max(2, Math.min(state.rightPct - 10, xPct));
+      } else if (edge === "right") {
+        state.rightPct = Math.min(98, Math.max(state.leftPct + 10, xPct));
+      }
+      updateCropBoxUI();
+    };
+
+    el.addEventListener("touchstart", (e) => { dragging = true; e.preventDefault(); }, { passive: false });
+    window.addEventListener("touchmove", (e) => {
+      if (dragging && e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    window.addEventListener("touchend", () => { dragging = false; });
+
+    el.addEventListener("mousedown", () => { dragging = true; });
+    window.addEventListener("mousemove", (e) => {
+      if (dragging) onMove(e.clientX, e.clientY);
+    });
+    window.addEventListener("mouseup", () => { dragging = false; });
+  }
+
+  bindEdgeDrag(lineTop, "top");
+  bindEdgeDrag(lineBottom, "bottom");
+  bindEdgeDrag(lineLeft, "left");
+  bindEdgeDrag(lineRight, "right");
+
+  // 4. 檔名與分頁更新
   function getCleanBaseName() {
     return (baseInput.value.trim() || "Furniture").replace(/[^a-zA-Z0-9_-]/g, "");
   }
@@ -728,7 +795,7 @@
 
     const count = state.shots.filter(Boolean).length;
     const reviewBtn = document.getElementById("btn-review");
-    reviewBtn.textContent = `🖼️ 檢視 / 下載 (${count}/4)`;
+    reviewBtn.textContent = `🖼️ 檢視/下載 (${count}/4)`;
     reviewBtn.classList.toggle("ready", count === 4);
 
     updateGhostOverlay();
@@ -740,39 +807,15 @@
     tab.addEventListener("click", () => {
       state.currentIdx = parseInt(tab.dataset.idx);
       refreshTabsUI();
-      statusPill.textContent = `目前對準：${ANGLES[state.currentIdx].label}（椅腳踩綠線、椅背頂黃線）`;
+      statusPill.textContent = `目前角度：${ANGLES[state.currentIdx].label}（調整左右藍線夾緊家具寬度）`;
     });
   });
 
-  // 4. 黃線 / 綠線微調（拍第 1 張後鎖定高度，確保四張比例一致）
-  function updateGuideLines() {
-    guideTop.style.top = `${state.topPct}%`;
-    guideFloor.style.top = `${state.floorPct}%`;
-  }
-
-  function adjustLine(which, delta) {
-    if (state.linesLocked) {
-      statusPill.textContent = "🔒 已依第 1 張鎖定線條位置，確保四張比例相同（按「重拍」可解鎖）";
-      return;
-    }
-    if (which === "top") {
-      state.topPct = Math.max(6, Math.min(state.floorPct - 15, state.topPct + delta));
-    } else {
-      state.floorPct = Math.min(94, Math.max(state.topPct + 15, state.floorPct + delta));
-    }
-    updateGuideLines();
-  }
-
-  document.getElementById("top-up").onclick = () => adjustLine("top", -2);
-  document.getElementById("top-dn").onclick = () => adjustLine("top", 2);
-  document.getElementById("floor-up").onclick = () => adjustLine("floor", -2);
-  document.getElementById("floor-dn").onclick = () => adjustLine("floor", 2);
-
-  // 5. 洋蔥皮殘影切換
+  // 5. 洋蔥皮殘影
   const GHOST_LEVELS = [
     { opacity: 0, label: "👻 殘影: 關" },
-    { opacity: 0.28, label: "👻 殘影: 28%" },
-    { opacity: 0.48, label: "👻 殘影: 48%" }
+    { opacity: 0.3, label: "👻 殘影: 30%" },
+    { opacity: 0.5, label: "👻 殘影: 50%" }
   ];
 
   function updateGhostOverlay() {
@@ -792,104 +835,175 @@
     updateGhostOverlay();
   });
 
-  // 6. 快門拍照（精準對應螢幕畫面並把底緣切齊綠色地板線）
+  // 6. 快門拍照（精準 1:1 裁切亮框區域，不額外多留任何牆壁或地板）
   document.getElementById("shutter-btn").addEventListener("click", () => {
     if (!video.videoWidth || !video.videoHeight) {
       statusPill.textContent = "⏳ 相機畫面尚未就緒，請稍候...";
       return;
     }
 
-    const vf = document.getElementById("viewfinder");
-    const viewW = vf.clientWidth;
-    const viewH = vf.clientHeight;
-
-    // 計算與 object-fit: cover 完全一致的裁切區域
+    const viewW = viewfinder.clientWidth;
+    const viewH = viewfinder.clientHeight;
     const vidRatio = video.videoWidth / video.videoHeight;
     const viewRatio = viewW / viewH;
 
-    let srcX = 0, srcY = 0, srcW = video.videoWidth, srcH = video.videoHeight;
+    let visibleVidX = 0, visibleVidY = 0, visibleVidW = video.videoWidth, visibleVidH = video.videoHeight;
     if (vidRatio > viewRatio) {
-      srcW = video.videoHeight * viewRatio;
-      srcX = (video.videoWidth - srcW) / 2;
+      visibleVidW = video.videoHeight * viewRatio;
+      visibleVidX = (video.videoWidth - visibleVidW) / 2;
     } else {
-      srcH = video.videoWidth / viewRatio;
-      srcY = (video.videoHeight - srcH) / 2;
+      visibleVidH = video.videoWidth / viewRatio;
+      visibleVidY = (video.videoHeight - visibleVidH) / 2;
     }
 
-    // 底部直接切齊綠色地板線，上方保留頭枕黃線以上些許空間，確保四張底部零浮空
-    const topCropRatio = Math.max(0, (state.topPct - 8) / 100);
-    const botCropRatio = state.floorPct / 100;
-    const cropH = srcH * (botCropRatio - topCropRatio);
-    const cropY = srcY + srcH * topCropRatio;
+    const cropX = visibleVidX + visibleVidW * (state.leftPct / 100);
+    const cropY = visibleVidY + visibleVidH * (state.topPct / 100);
+    const cropW = visibleVidW * ((state.rightPct - state.leftPct) / 100);
+    const cropH = visibleVidH * ((state.bottomPct - state.topPct) / 100);
 
-    const outH = Math.min(1200, Math.round(cropH));
-    const outW = Math.round(outH * (srcW / cropH));
+    const maxDim = 1280;
+    let outW = Math.max(10, Math.round(cropW));
+    let outH = Math.max(10, Math.round(cropH));
+    if (Math.max(outW, outH) > maxDim) {
+      const scale = maxDim / Math.max(outW, outH);
+      outW = Math.round(outW * scale);
+      outH = Math.round(outH * scale);
+    }
 
     const capCanvas = document.createElement("canvas");
     capCanvas.width = outW;
     capCanvas.height = outH;
     const cctx = capCanvas.getContext("2d");
-    cctx.drawImage(video, srcX, cropY, srcW, cropH, 0, 0, outW, outH);
+    cctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
 
     state.shots[state.currentIdx] = capCanvas.toDataURL("image/png");
 
-    // 拍下第一張時自動鎖定線條與手腕傾角，並自動開啟 28% 殘影輔助下一張
-    if (!state.linesLocked) {
-      state.linesLocked = true;
-      if (state.currentBeta !== null) {
-        state.lockedBeta = state.currentBeta;
-      }
-      if (state.ghostMode === 0) {
-        state.ghostMode = 1;
-        document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[1].label;
-      }
+    // 拍下第 1 張後鎖定上下橘綠線（保證四張高度與地板齊平），左右藍線維持自由調整
+    if (!state.verticalLocked) {
+      state.verticalLocked = true;
     }
 
-    // 自動跳到下一張尚未拍攝的角度
     const nextEmpty = state.shots.findIndex((s, i) => i > state.currentIdx && !s);
     const anyEmpty = state.shots.findIndex(s => !s);
     if (nextEmpty !== -1) {
       state.currentIdx = nextEmpty;
-      statusPill.textContent = `✅ 已拍好！請移動至【${ANGLES[state.currentIdx].label}】並讓傾角變綠`;
+      statusPill.textContent = `✅ 已裁切保存！請拍【${ANGLES[state.currentIdx].label}】（可拖動左右藍線貼緊側面）`;
     } else if (anyEmpty !== -1) {
       state.currentIdx = anyEmpty;
-      statusPill.textContent = `✅ 已拍好！請補拍【${ANGLES[state.currentIdx].label}】`;
+      statusPill.textContent = `✅ 已裁切保存！請補拍【${ANGLES[state.currentIdx].label}】`;
     } else {
-      statusPill.textContent = "🎉 四向全部拍攝完成！請點右下角「檢視 / 下載」";
+      statusPill.textContent = "🎉 四向全部裁切完成！請點「檢視/下載」打包 ZIP";
     }
 
     refreshTabsUI();
   });
 
-  // 7. 全部重拍
+  // 7. 全部重設
   document.getElementById("btn-reset-all").addEventListener("click", () => {
-    if (!confirm("確定清空目前 4 張照片並解除高度鎖定嗎？")) return;
+    if (!confirm("確定清空目前 4 張照片並解除上下高度鎖定嗎？")) return;
     state.shots = [null, null, null, null];
     state.currentIdx = 0;
-    state.linesLocked = false;
-    state.lockedBeta = null;
+    state.verticalLocked = false;
     state.ghostMode = 0;
     document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[0].label;
-    statusPill.textContent = "已重設！請先調整黃線與綠線對準椅子，再拍「0° 正面」";
+    statusPill.textContent = "已重設！拖動四邊框線緊貼沙發四邊後按快門";
     refreshTabsUI();
   });
 
-  // 8. 檢視並排對齊與下載
-  function triggerDownload(dataUrl, filename) {
+  // 8. 零依賴 ZIP 打包器（一次下載全部 4 張 PNG）
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function dataUrlToBytes(dataUrl) {
+    const bin = atob(dataUrl.split(",")[1]);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+
+  function buildZipBlob(entries) {
+    const enc = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    entries.forEach(({ name, data }) => {
+      const nameBytes = enc.encode(name);
+      const sum = crc32(data);
+
+      const lh = new ArrayBuffer(30 + nameBytes.length);
+      const lv = new DataView(lh);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);
+      lv.setUint32(14, sum, true);
+      lv.setUint32(18, data.length, true);
+      lv.setUint32(22, data.length, true);
+      lv.setUint16(26, nameBytes.length, true);
+      new Uint8Array(lh, 30).set(nameBytes);
+      localParts.push(new Uint8Array(lh), data);
+
+      const ch = new ArrayBuffer(46 + nameBytes.length);
+      const cv = new DataView(ch);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint32(16, sum, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint32(42, offset, true);
+      new Uint8Array(ch, 46).set(nameBytes);
+      centralParts.push(new Uint8Array(ch));
+
+      offset += lh.byteLength + data.length;
+    });
+
+    const cdSize = centralParts.reduce((s, p) => s + p.length, 0);
+    const eocd = new ArrayBuffer(22);
+    const ev = new DataView(eocd);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, entries.length, true);
+    ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+
+    return new Blob([...localParts, ...centralParts, new Uint8Array(eocd)], { type: "application/zip" });
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = dataUrl;
+    a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
+  // 9. 檢視與下載視窗
   document.getElementById("btn-review").addEventListener("click", () => {
     const base = getCleanBaseName();
     const grid = document.getElementById("compare-grid");
     grid.innerHTML = ANGLES.map(a => {
       const shot = state.shots[a.idx];
-      const fname = `${base}${a.suffix}.png`;
       return `
         <div class="compare-card">
           <div class="compare-img-wrap">
@@ -897,7 +1011,7 @@
           </div>
           <div class="compare-meta">
             <span style="font-weight:700;color:#e5e7eb;">${a.label}</span>
-            <button class="btn-dl-one" data-idx="${a.idx}" ${shot ? "" : "disabled"}>⬇️ ${fname}</button>
+            <button class="btn-dl-one" data-idx="${a.idx}" ${shot ? "" : "disabled"}>⬇️ 單張</button>
           </div>
         </div>
       `;
@@ -907,7 +1021,10 @@
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.dataset.idx);
         const shot = state.shots[idx];
-        if (shot) triggerDownload(shot, `${base}${ANGLES[idx].suffix}.png`);
+        if (shot) {
+          const blob = new Blob([dataUrlToBytes(shot)], { type: "image/png" });
+          downloadBlob(blob, `${base}${ANGLES[idx].suffix}.png`);
+        }
       });
     });
 
@@ -918,20 +1035,27 @@
     document.getElementById("review-modal").classList.remove("show");
   });
 
-  document.getElementById("btn-dl-all").addEventListener("click", () => {
+  document.getElementById("btn-dl-zip").addEventListener("click", () => {
     const base = getCleanBaseName();
-    let delay = 0;
+    const entries = [];
     ANGLES.forEach(a => {
       const shot = state.shots[a.idx];
-      if (!shot) return;
-      setTimeout(() => {
-        triggerDownload(shot, `${base}${a.suffix}.png`);
-      }, delay);
-      delay += 450;
+      if (shot) {
+        entries.push({
+          name: `${base}${a.suffix}.png`,
+          data: dataUrlToBytes(shot)
+        });
+      }
     });
+    if (!entries.length) {
+      alert("尚未拍攝任何照片！");
+      return;
+    }
+    const zipBlob = buildZipBlob(entries);
+    downloadBlob(zipBlob, `${base}_4向素材.zip`);
   });
 
-  updateGuideLines();
+  updateCropBoxUI();
   refreshTabsUI();
   startCamera();
 })();
