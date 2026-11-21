@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>和樂宮 3D｜四向家具精準裁切相機</title>
+  <title>和樂宮 3D｜四向家具實拍＋AI自動去背相機</title>
   <style>
     :root {
       --bg: #0e1116;
+      --panel: #161a22;
       --border: #333b48;
       --gold: #f5b942;
       --green: #22c55e;
       --cyan: #38bdf8;
+      --danger: #ef4444;
       --text: #f3f4f6;
       --sub: #9ca3af;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -45,19 +47,19 @@
     /* ================= 頂部設定列 ================= */
     #top-bar {
       flex: 0 0 auto;
-      background: #161a22;
+      background: var(--panel);
       border-bottom: 1px solid var(--border);
       padding: 6px 10px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       z-index: 25;
     }
 
     .name-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .name-row label {
@@ -74,7 +76,7 @@
       color: #fff;
       font-size: 13px;
       font-weight: 700;
-      padding: 4px 8px;
+      padding: 5px 8px;
       border-radius: 6px;
       outline: none;
       user-select: text;
@@ -88,10 +90,20 @@
       color: var(--text);
       font-size: 11px;
       font-weight: 700;
-      padding: 5px 8px;
+      padding: 5px 7px;
       border-radius: 6px;
       cursor: pointer;
       white-space: nowrap;
+    }
+    .btn-mini.locked {
+      background: rgba(245, 185, 66, 0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .btn-mini.unlocked {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
     }
 
     .angle-tabs {
@@ -138,7 +150,7 @@
       font-size: 9px;
     }
 
-    /* ================= 主體工作區（直向：上下排；橫向：左右排） ================= */
+    /* ================= 主體取景區 ================= */
     #main-stage {
       flex: 1 1 auto;
       display: flex;
@@ -171,11 +183,10 @@
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
-      mix-blend-mode: screen;
       z-index: 4;
     }
 
-    /* ================= 四邊暗化遮罩（框外變暗，框內即最終成品） ================= */
+    /* 四邊暗化遮罩 */
     .crop-mask {
       position: absolute;
       background: rgba(0, 0, 0, 0.62);
@@ -187,7 +198,6 @@
     #mask-left { left: 0; }
     #mask-right { right: 0; }
 
-    /* 中央垂直與水平參考線 */
     #guide-center-v {
       position: absolute;
       top: 0;
@@ -216,7 +226,7 @@
       width: 84px;
       height: 2.5px;
       border-radius: 2px;
-      background: rgba(245, 185, 66, 0.8);
+      background: rgba(245, 185, 66, 0.85);
       transition: transform 0.06s linear, background 0.15s;
     }
     #roll-bar.level {
@@ -224,13 +234,13 @@
       box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
     }
 
-    /* ================= 可拖曳的四條裁切線 ================= */
+    /* 可拖曳四邊線 */
     .drag-hline {
       position: absolute;
       left: 0;
       right: 0;
-      height: 32px;
-      margin-top: -16px;
+      height: 34px;
+      margin-top: -17px;
       cursor: ns-resize;
       z-index: 12;
       display: flex;
@@ -240,7 +250,6 @@
       width: 100%;
       height: 2.5px;
     }
-
     #line-top .bar { background: var(--gold); box-shadow: 0 0 6px #000; }
     #line-top .tag {
       position: absolute;
@@ -254,12 +263,11 @@
       border-radius: 4px;
       pointer-events: none;
     }
-
     #line-bottom .bar { background: var(--green); box-shadow: 0 0 6px #000; }
     #line-bottom .tag {
       position: absolute;
       left: 8px;
-      top: 17px;
+      top: 18px;
       font-size: 10.5px;
       font-weight: 800;
       color: #052e16;
@@ -273,8 +281,8 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 32px;
-      margin-left: -16px;
+      width: 34px;
+      margin-left: -17px;
       cursor: ew-resize;
       z-index: 12;
       display: flex;
@@ -304,7 +312,7 @@
       top: 8px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 18, 24, 0.88);
+      background: rgba(15, 18, 24, 0.9);
       border: 1px solid var(--border);
       color: #fef3c7;
       font-size: 11px;
@@ -319,10 +327,49 @@
       z-index: 16;
     }
 
+    /* AI 去背處理中遮罩 */
+    #ai-loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 13, 18, 0.84);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 30;
+      backdrop-filter: blur(4px);
+    }
+    #ai-loading.show { display: flex; }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(245, 185, 66, 0.25);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #ai-loading-text {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gold);
+      text-align: center;
+      padding: 0 20px;
+    }
+    #ai-loading-sub {
+      font-size: 11px;
+      color: var(--sub);
+      text-align: center;
+      padding: 0 24px;
+    }
+
     /* ================= 快門與操作列 ================= */
     #control-bar {
       flex: 0 0 auto;
-      background: #161a22;
+      background: var(--panel);
       border-top: 1px solid var(--border);
       padding: 8px 12px;
       display: flex;
@@ -367,7 +414,6 @@
       background: var(--gold);
     }
 
-    /* 橫向握持時自動把快門列移到右側，保留最大上下取景高度 */
     @media (orientation: landscape) {
       #top-bar {
         flex-direction: row;
@@ -375,7 +421,7 @@
         padding: 4px 10px;
         gap: 8px;
       }
-      .name-row { flex: 0 0 240px; }
+      .name-row { flex: 0 0 270px; }
       .angle-tabs { flex: 1; }
       .angle-tab { padding: 2px 4px; }
       #main-stage { flex-direction: row; }
@@ -397,8 +443,8 @@
       }
     }
 
-    /* ================= 四向並排檢查與下載視窗 ================= */
-    #review-modal {
+    /* ================= 通用彈窗基底 ================= */
+    .modal-backdrop {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.88);
@@ -409,7 +455,7 @@
       z-index: 50;
       backdrop-filter: blur(5px);
     }
-    #review-modal.show { display: flex; }
+    .modal-backdrop.show { display: flex; }
 
     .modal-card {
       width: 100%;
@@ -445,6 +491,122 @@
       gap: 10px;
     }
 
+    /* 棋盤格透明背景樣式 */
+    .checker-bg {
+      background-color: #1f242d;
+      background-image:
+        linear-gradient(45deg, #2b323e 25%, transparent 25%),
+        linear-gradient(-45deg, #2b323e 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #2b323e 75%),
+        linear-gradient(-45deg, transparent 75%, #2b323e 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+
+    /* 底色切換列 */
+    .bg-picker-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: #12161d;
+      padding: 7px 9px;
+      border-radius: 9px;
+      border: 1px solid #2e3644;
+      flex-wrap: wrap;
+    }
+    .bg-picker-row span {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #d1d5db;
+    }
+    .swatch-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .swatch-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 2px solid #4b5563;
+      cursor: pointer;
+      padding: 0;
+    }
+    .swatch-btn.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(245, 185, 66, 0.45);
+      transform: scale(1.06);
+    }
+    .swatch-custom {
+      width: 28px;
+      height: 28px;
+      border: none;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* ================= 單張即時確認卡 ================= */
+    #single-preview-box {
+      width: 100%;
+      height: 44dvh;
+      max-height: 320px;
+      border-radius: 10px;
+      border: 1px solid #3a4352;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #single-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #single-preview-box::after {
+      content: "底座基準線";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-bottom: 2px solid var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--green);
+      padding-left: 6px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+      pointer-events: none;
+    }
+
+    .confirm-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 8px;
+    }
+    .btn-retake {
+      padding: 12px 8px;
+      border-radius: 10px;
+      border: 1px solid #ef4444;
+      background: rgba(239, 68, 68, 0.16);
+      color: #fca5a5;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-accept {
+      padding: 12px 10px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* ================= 四向總覽視窗 ================= */
     .compare-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -465,7 +627,6 @@
     .compare-img-wrap {
       width: 100%;
       aspect-ratio: 4 / 3;
-      background: repeating-conic-gradient(#1f242d 0% 25%, #171b22 0% 50%) 50% / 14px 14px;
       border-radius: 6px;
       overflow: hidden;
       position: relative;
@@ -532,6 +693,7 @@
     <div class="name-row">
       <label for="base-filename">檔名</label>
       <input type="text" id="base-filename" value="LaZBoy" placeholder="例: LaZBoy" />
+      <button class="btn-mini unlocked" id="btn-lock-v">🔓 上下自由</button>
       <button class="btn-mini" id="btn-ghost-toggle">👻 殘影: 關</button>
       <button class="btn-mini" id="btn-reset-all">🗑️ 重設</button>
     </div>
@@ -592,40 +754,88 @@
         <span class="vtag">▶</span>
       </div>
 
-      <div id="status-pill">拖動四邊框線緊貼沙發四邊（亮區即為最終裁切成品）</div>
+      <div id="status-pill">拖動四邊框線貼齊家具四邊，按下快門將自動去背</div>
+
+      <!-- AI 去背處理遮罩 -->
+      <div id="ai-loading">
+        <div class="spinner"></div>
+        <div id="ai-loading-text">✨ 正在自動去背中...</div>
+        <div id="ai-loading-sub">首次開啟需下載 AI 去背模型（約 40MB），之後會自動快取秒開</div>
+      </div>
     </main>
 
     <!-- 快門與預覽列 -->
     <footer id="control-bar">
       <button class="btn-sub" id="btn-sensor">📐 水平儀</button>
-      <button id="shutter-btn" title="拍照"></button>
-      <button class="btn-sub" id="btn-review">🖼️ 檢視/下載 (0/4)</button>
+      <button id="shutter-btn" title="拍照並自動去背"></button>
+      <button class="btn-sub" id="btn-review">🖼️ 總覽/下載 (0/4)</button>
     </footer>
   </div>
 </div>
 
-<!-- 四向並排檢查與下載視窗 -->
-<div id="review-modal">
+<!-- 單張拍完即時確認卡 -->
+<div class="modal-backdrop" id="confirm-modal">
   <div class="modal-card">
     <div class="modal-head">
-      <h3>📐 四向精準裁切檢查與打包下載</h3>
-      <button class="btn-mini" id="btn-close-review">✕ 關閉</button>
+      <h3 id="confirm-title">✨ 單張去背確認（0° 正面）</h3>
+      <button class="btn-mini" id="btn-toggle-raw">✨ 目前: AI去背</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:12px;color:#d1d5db;line-height:1.45;">
-        以下四張即為框線內裁切出的成品（底邊已精準切齊綠線）。確認無誤後點下方按鈕打包下載 ZIP：
+      <div id="single-preview-box" class="checker-bg">
+        <img id="single-preview-img" alt="去背預覽" />
       </div>
-      <div class="compare-grid" id="compare-grid"></div>
-      <button class="btn-dl-all" id="btn-dl-zip">📦 一鍵打包下載 ZIP（4張全收）</button>
-      <div style="font-size:11px;color:#9ca3af;text-align:center;">
-        下載 ZIP 後在手機「我的檔案」解壓縮，再用相簿長按沙發主體去背（或 PhotoRoom）即可上傳 GitHub。
+
+      <div class="bg-picker-row">
+        <span>預覽/匯出底色：</span>
+        <div class="swatch-group" id="confirm-swatches">
+          <button class="swatch-btn checker-bg active" data-bg="transparent" title="透明底（3D專用）"></button>
+          <button class="swatch-btn" data-bg="#00e676" style="background:#00e676;" title="亮綠幕檢查邊緣"></button>
+          <button class="swatch-btn" data-bg="#111111" style="background:#111111;" title="純黑底檢查淺色邊緣"></button>
+          <button class="swatch-btn" data-bg="#ffffff" style="background:#ffffff;" title="純白底商品圖"></button>
+          <input type="color" class="swatch-custom" id="confirm-custom-color" value="#f3f4f6" title="自訂底色" />
+        </div>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-retake" id="btn-single-retake">🔄 重拍此張</button>
+        <button class="btn-accept" id="btn-single-accept">✅ 確認，拍下一面</button>
       </div>
     </div>
   </div>
 </div>
 
-<script>
-(() => {
+<!-- 四向總覽並排檢查與打包下載視窗 -->
+<div class="modal-backdrop" id="review-modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>📐 四向對齊總覽與打包下載</h3>
+      <button class="btn-mini" id="btn-close-review">✕ 關閉</button>
+    </div>
+    <div class="modal-body">
+      <div class="bg-picker-row">
+        <span>輸出檔案底色：</span>
+        <div class="swatch-group" id="review-swatches">
+          <button class="swatch-btn checker-bg active" data-bg="transparent" title="透明 PNG（和樂宮 3D 專用）"></button>
+          <button class="swatch-btn" data-bg="#ffffff" style="background:#ffffff;" title="純白底 PNG（傳給客人）"></button>
+          <button class="swatch-btn" data-bg="#00e676" style="background:#00e676;" title="亮綠幕 PNG"></button>
+          <button class="swatch-btn" data-bg="#111111" style="background:#111111;" title="純黑底 PNG"></button>
+          <input type="color" class="swatch-custom" id="review-custom-color" value="#f5f5f4" title="自訂底色" />
+        </div>
+      </div>
+
+      <div class="compare-grid" id="compare-grid"></div>
+
+      <button class="btn-dl-all" id="btn-dl-zip">📦 一鍵打包下載 ZIP（全部已拍圖檔）</button>
+      <div style="font-size:11px;color:#9ca3af;text-align:center;">
+        匯入「和樂宮 3D」請選<strong>透明格紋</strong>底色打包；下載 ZIP 後於手機「我的檔案」解壓縮即可上傳 GitHub。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { removeBackground } from "https://esm.sh/@imgly/background-removal@1.5.5";
+
   const ANGLES = [
     { idx: 0, label: "0° 正面", suffix: "" },
     { idx: 1, label: "90° 右側", suffix: "_90" },
@@ -633,6 +843,7 @@
     { idx: 3, label: "270° 左側", suffix: "_270" }
   ];
 
+  // shots[idx] = { rawUrl, nobgUrl, useNobg }
   const state = {
     currentIdx: 0,
     shots: [null, null, null, null],
@@ -641,7 +852,9 @@
     leftPct: 12,
     rightPct: 88,
     verticalLocked: false,
-    ghostMode: 0
+    ghostMode: 0,
+    bgColor: "transparent", // "transparent" 或 "#xxxxxx"
+    isProcessing: false
   };
 
   const video = document.getElementById("cam-video");
@@ -649,6 +862,7 @@
   const ghostImg = document.getElementById("ghost-overlay");
   const statusPill = document.getElementById("status-pill");
   const baseInput = document.getElementById("base-filename");
+  const btnLockV = document.getElementById("btn-lock-v");
 
   const lineTop = document.getElementById("line-top");
   const lineBottom = document.getElementById("line-bottom");
@@ -677,7 +891,7 @@
     }
   }
 
-  // 2. 左右水平儀（避免寬沙發拍歪切腳）
+  // 2. 左右水平儀
   function handleOrientation(e) {
     if (typeof e.beta !== "number" || typeof e.gamma !== "number") return;
     const isLandscape = window.innerWidth > window.innerHeight;
@@ -703,7 +917,26 @@
     }
   });
 
-  // 3. 更新四邊框線與暗化遮罩（精準 1:1 呈現實際裁切範圍）
+  // 3. 上下線鎖定 / 解鎖切換鈕
+  function setVerticalLock(locked) {
+    state.verticalLocked = locked;
+    if (locked) {
+      btnLockV.textContent = "🔒 上下已鎖";
+      btnLockV.className = "btn-mini locked";
+    } else {
+      btnLockV.textContent = "🔓 上下自由";
+      btnLockV.className = "btn-mini unlocked";
+    }
+  }
+
+  btnLockV.addEventListener("click", () => {
+    setVerticalLock(!state.verticalLocked);
+    statusPill.textContent = state.verticalLocked
+      ? "🔒 已鎖定上下高度線（確保各面高度一致）"
+      : "🔓 已解鎖上下線！現在可單獨上下拖動橘線與綠線";
+  });
+
+  // 4. 更新四邊框線與暗化遮罩
   function updateCropBoxUI() {
     lineTop.style.top = `${state.topPct}%`;
     lineBottom.style.top = `${state.bottomPct}%`;
@@ -723,7 +956,6 @@
     maskRight.style.height = midHeight;
     maskRight.style.width = `${100 - state.rightPct}%`;
 
-    // 洋蔥皮殘影對齊在框內位置
     ghostImg.style.left = `${state.leftPct}%`;
     ghostImg.style.top = `${state.topPct}%`;
     ghostImg.style.width = `${state.rightPct - state.leftPct}%`;
@@ -740,7 +972,7 @@
 
       if (edge === "top" || edge === "bottom") {
         if (state.verticalLocked) {
-          statusPill.textContent = "🔒 上下高度已依第 1 張鎖定（左右藍線仍可調整，或按「重設」解鎖）";
+          statusPill.textContent = "🔒 上下高度已鎖定，若走道太窄請點上方「🔒 上下已鎖」解鎖微調";
           dragging = false;
           return;
         }
@@ -775,9 +1007,14 @@
   bindEdgeDrag(lineLeft, "left");
   bindEdgeDrag(lineRight, "right");
 
-  // 4. 檔名與分頁更新
+  // 5. 檔名與分頁更新
   function getCleanBaseName() {
     return (baseInput.value.trim() || "Furniture").replace(/[^a-zA-Z0-9_-]/g, "");
+  }
+
+  function getActiveShotUrl(shot) {
+    if (!shot) return null;
+    return (shot.useNobg && shot.nobgUrl) ? shot.nobgUrl : shot.rawUrl;
   }
 
   function refreshTabsUI() {
@@ -795,7 +1032,7 @@
 
     const count = state.shots.filter(Boolean).length;
     const reviewBtn = document.getElementById("btn-review");
-    reviewBtn.textContent = `🖼️ 檢視/下載 (${count}/4)`;
+    reviewBtn.textContent = `🖼️ 總覽/下載 (${count}/4)`;
     reviewBtn.classList.toggle("ready", count === 4);
 
     updateGhostOverlay();
@@ -807,22 +1044,23 @@
     tab.addEventListener("click", () => {
       state.currentIdx = parseInt(tab.dataset.idx);
       refreshTabsUI();
-      statusPill.textContent = `目前角度：${ANGLES[state.currentIdx].label}（調整左右藍線夾緊家具寬度）`;
+      statusPill.textContent = `目前角度：${ANGLES[state.currentIdx].label}（拉緊左右藍線對準後按快門）`;
     });
   });
 
-  // 5. 洋蔥皮殘影
+  // 6. 洋蔥皮殘影
   const GHOST_LEVELS = [
     { opacity: 0, label: "👻 殘影: 關" },
-    { opacity: 0.3, label: "👻 殘影: 30%" },
-    { opacity: 0.5, label: "👻 殘影: 50%" }
+    { opacity: 0.35, label: "👻 殘影: 35%" },
+    { opacity: 0.55, label: "👻 殘影: 55%" }
   ];
 
   function updateGhostOverlay() {
     const refShot = state.shots[0] || state.shots.find(Boolean);
+    const refUrl = getActiveShotUrl(refShot);
     const level = GHOST_LEVELS[state.ghostMode];
-    if (refShot && level.opacity > 0 && state.currentIdx !== 0) {
-      ghostImg.src = refShot;
+    if (refUrl && level.opacity > 0 && state.currentIdx !== 0) {
+      ghostImg.src = refUrl;
       ghostImg.style.opacity = String(level.opacity);
     } else {
       ghostImg.style.opacity = "0";
@@ -835,82 +1073,246 @@
     updateGhostOverlay();
   });
 
-  // 6. 快門拍照（精準 1:1 裁切亮框區域，不額外多留任何牆壁或地板）
-  document.getElementById("shutter-btn").addEventListener("click", () => {
-    if (!video.videoWidth || !video.videoHeight) {
-      statusPill.textContent = "⏳ 相機畫面尚未就緒，請稍候...";
-      return;
-    }
-
-    const viewW = viewfinder.clientWidth;
-    const viewH = viewfinder.clientHeight;
-    const vidRatio = video.videoWidth / video.videoHeight;
-    const viewRatio = viewW / viewH;
-
-    let visibleVidX = 0, visibleVidY = 0, visibleVidW = video.videoWidth, visibleVidH = video.videoHeight;
-    if (vidRatio > viewRatio) {
-      visibleVidW = video.videoHeight * viewRatio;
-      visibleVidX = (video.videoWidth - visibleVidW) / 2;
+  // 7. 底色選擇器同步（確認卡與總覽視窗共用）
+  function applyPreviewBackground(containerEl, bgColor) {
+    if (bgColor === "transparent") {
+      containerEl.classList.add("checker-bg");
+      containerEl.style.backgroundColor = "";
     } else {
-      visibleVidH = video.videoWidth / viewRatio;
-      visibleVidY = (video.videoHeight - visibleVidH) / 2;
+      containerEl.classList.remove("checker-bg");
+      containerEl.style.backgroundColor = bgColor;
     }
+  }
 
-    const cropX = visibleVidX + visibleVidW * (state.leftPct / 100);
-    const cropY = visibleVidY + visibleVidH * (state.topPct / 100);
-    const cropW = visibleVidW * ((state.rightPct - state.leftPct) / 100);
-    const cropH = visibleVidH * ((state.bottomPct - state.topPct) / 100);
+  function syncBgSwatches(bgColor) {
+    state.bgColor = bgColor;
+    document.querySelectorAll(".swatch-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.bg === bgColor);
+    });
+    applyPreviewBackground(document.getElementById("single-preview-box"), bgColor);
+    document.querySelectorAll(".compare-img-wrap").forEach(wrap => {
+      applyPreviewBackground(wrap, bgColor);
+    });
+  }
 
-    const maxDim = 1280;
-    let outW = Math.max(10, Math.round(cropW));
-    let outH = Math.max(10, Math.round(cropH));
-    if (Math.max(outW, outH) > maxDim) {
-      const scale = maxDim / Math.max(outW, outH);
-      outW = Math.round(outW * scale);
-      outH = Math.round(outH * scale);
+  document.querySelectorAll(".swatch-btn").forEach(btn => {
+    btn.addEventListener("click", () => syncBgSwatches(btn.dataset.bg));
+  });
+  document.getElementById("confirm-custom-color").addEventListener("input", (e) => {
+    syncBgSwatches(e.target.value);
+  });
+  document.getElementById("review-custom-color").addEventListener("input", (e) => {
+    syncBgSwatches(e.target.value);
+  });
+
+  // 8. 單張即時確認卡邏輯
+  function openConfirmModal(idx) {
+    const shot = state.shots[idx];
+    if (!shot) return;
+
+    document.getElementById("confirm-title").textContent = `✨ 單張去背確認（${ANGLES[idx].label}）`;
+    const previewImg = document.getElementById("single-preview-img");
+    const toggleBtn = document.getElementById("btn-toggle-raw");
+
+    const updateSingleView = () => {
+      previewImg.src = getActiveShotUrl(shot);
+      if (shot.nobgUrl) {
+        toggleBtn.disabled = false;
+        toggleBtn.textContent = shot.useNobg ? "✨ 目前: AI去背" : "📷 目前: 原始裁切";
+      } else {
+        toggleBtn.disabled = true;
+        toggleBtn.textContent = "📷 原始裁切圖";
+      }
+    };
+
+    toggleBtn.onclick = () => {
+      shot.useNobg = !shot.useNobg;
+      updateSingleView();
+      refreshTabsUI();
+    };
+
+    updateSingleView();
+    applyPreviewBackground(document.getElementById("single-preview-box"), state.bgColor);
+
+    const anyEmptyAfter = state.shots.some((s, i) => i !== idx && !s);
+    document.getElementById("btn-single-accept").textContent = anyEmptyAfter
+      ? "✅ 確認，拍下一面"
+      : "🎉 確認，開啟總覽下載";
+
+    document.getElementById("confirm-modal").classList.add("show");
+  }
+
+  document.getElementById("btn-single-retake").addEventListener("click", () => {
+    const old = state.shots[state.currentIdx];
+    if (old) {
+      if (old.rawUrl) URL.revokeObjectURL(old.rawUrl);
+      if (old.nobgUrl) URL.revokeObjectURL(old.nobgUrl);
     }
+    state.shots[state.currentIdx] = null;
+    document.getElementById("confirm-modal").classList.remove("show");
+    refreshTabsUI();
+    statusPill.textContent = `🔄 請重新對準【${ANGLES[state.currentIdx].label}】按快門`;
+  });
 
-    const capCanvas = document.createElement("canvas");
-    capCanvas.width = outW;
-    capCanvas.height = outH;
-    const cctx = capCanvas.getContext("2d");
-    cctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+  document.getElementById("btn-single-accept").addEventListener("click", () => {
+    document.getElementById("confirm-modal").classList.remove("show");
 
-    state.shots[state.currentIdx] = capCanvas.toDataURL("image/png");
-
-    // 拍下第 1 張後鎖定上下橘綠線（保證四張高度與地板齊平），左右藍線維持自由調整
-    if (!state.verticalLocked) {
-      state.verticalLocked = true;
+    // 確認第 1 張後自動鎖定上下高度線
+    if (state.currentIdx === 0 && !state.verticalLocked) {
+      setVerticalLock(true);
     }
 
     const nextEmpty = state.shots.findIndex((s, i) => i > state.currentIdx && !s);
     const anyEmpty = state.shots.findIndex(s => !s);
     if (nextEmpty !== -1) {
       state.currentIdx = nextEmpty;
-      statusPill.textContent = `✅ 已裁切保存！請拍【${ANGLES[state.currentIdx].label}】（可拖動左右藍線貼緊側面）`;
+      refreshTabsUI();
+      statusPill.textContent = `✅ 請移動至【${ANGLES[state.currentIdx].label}】（上下已鎖，可調左右藍線）`;
     } else if (anyEmpty !== -1) {
       state.currentIdx = anyEmpty;
-      statusPill.textContent = `✅ 已裁切保存！請補拍【${ANGLES[state.currentIdx].label}】`;
+      refreshTabsUI();
+      statusPill.textContent = `✅ 請補拍【${ANGLES[state.currentIdx].label}】`;
     } else {
-      statusPill.textContent = "🎉 四向全部裁切完成！請點「檢視/下載」打包 ZIP";
+      refreshTabsUI();
+      openReviewModal();
+    }
+  });
+
+  // 9. 快門拍照 ＋ 自動 AI 去背
+  document.getElementById("shutter-btn").addEventListener("click", async () => {
+    if (state.isProcessing) return;
+    if (!video.videoWidth || !video.videoHeight) {
+      statusPill.textContent = "⏳ 相機畫面尚未就緒，請稍候...";
+      return;
     }
 
-    refreshTabsUI();
+    state.isProcessing = true;
+    const loadingEl = document.getElementById("ai-loading");
+    const loadingText = document.getElementById("ai-loading-text");
+    const loadingSub = document.getElementById("ai-loading-sub");
+    loadingText.textContent = "✨ 正在自動去背中...";
+    loadingSub.textContent = "首次執行需下載 AI 模型（約 40MB），之後會快取在手機中";
+    loadingEl.classList.add("show");
+
+    try {
+      const viewW = viewfinder.clientWidth;
+      const viewH = viewfinder.clientHeight;
+      const vidRatio = video.videoWidth / video.videoHeight;
+      const viewRatio = viewW / viewH;
+
+      let visibleVidX = 0, visibleVidY = 0, visibleVidW = video.videoWidth, visibleVidH = video.videoHeight;
+      if (vidRatio > viewRatio) {
+        visibleVidW = video.videoHeight * viewRatio;
+        visibleVidX = (video.videoWidth - visibleVidW) / 2;
+      } else {
+        visibleVidH = video.videoWidth / viewRatio;
+        visibleVidY = (video.videoHeight - visibleVidH) / 2;
+      }
+
+      const cropX = visibleVidX + visibleVidW * (state.leftPct / 100);
+      const cropY = visibleVidY + visibleVidH * (state.topPct / 100);
+      const cropW = visibleVidW * ((state.rightPct - state.leftPct) / 100);
+      const cropH = visibleVidH * ((state.bottomPct - state.topPct) / 100);
+
+      const maxDim = 1200;
+      let outW = Math.max(10, Math.round(cropW));
+      let outH = Math.max(10, Math.round(cropH));
+      if (Math.max(outW, outH) > maxDim) {
+        const scale = maxDim / Math.max(outW, outH);
+        outW = Math.round(outW * scale);
+        outH = Math.round(outH * scale);
+      }
+
+      const capCanvas = document.createElement("canvas");
+      capCanvas.width = outW;
+      capCanvas.height = outH;
+      const cctx = capCanvas.getContext("2d");
+      cctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+
+      const rawBlob = await new Promise(res => capCanvas.toBlob(res, "image/png"));
+      const rawUrl = URL.createObjectURL(rawBlob);
+
+      let nobgUrl = null;
+      try {
+        const nobgBlob = await removeBackground(rawBlob, {
+          model: "isnet_quint8",
+          output: { format: "image/png" },
+          progress: (key, current, total) => {
+            if (total > 0) {
+              const pct = Math.min(100, Math.round((current / total) * 100));
+              loadingSub.textContent = `AI 處理進度：${pct}%`;
+            }
+          }
+        });
+        nobgUrl = URL.createObjectURL(nobgBlob);
+      } catch (aiErr) {
+        console.warn("AI 去背失敗，保留原裁切圖：", aiErr);
+        statusPill.textContent = "⚠️ AI 去背模型載入受限，已保留精準裁切原圖";
+      }
+
+      const prev = state.shots[state.currentIdx];
+      if (prev) {
+        if (prev.rawUrl) URL.revokeObjectURL(prev.rawUrl);
+        if (prev.nobgUrl) URL.revokeObjectURL(prev.nobgUrl);
+      }
+
+      state.shots[state.currentIdx] = {
+        rawUrl,
+        nobgUrl,
+        useNobg: Boolean(nobgUrl)
+      };
+
+      refreshTabsUI();
+      openConfirmModal(state.currentIdx);
+    } finally {
+      loadingEl.classList.remove("show");
+      state.isProcessing = false;
+    }
   });
 
-  // 7. 全部重設
+  // 10. 全部重設
   document.getElementById("btn-reset-all").addEventListener("click", () => {
     if (!confirm("確定清空目前 4 張照片並解除上下高度鎖定嗎？")) return;
+    state.shots.forEach(s => {
+      if (s?.rawUrl) URL.revokeObjectURL(s.rawUrl);
+      if (s?.nobgUrl) URL.revokeObjectURL(s.nobgUrl);
+    });
     state.shots = [null, null, null, null];
     state.currentIdx = 0;
-    state.verticalLocked = false;
+    setVerticalLock(false);
     state.ghostMode = 0;
     document.getElementById("btn-ghost-toggle").textContent = GHOST_LEVELS[0].label;
-    statusPill.textContent = "已重設！拖動四邊框線緊貼沙發四邊後按快門";
+    statusPill.textContent = "已重設！拖動四邊框線貼齊家具四邊後按快門";
     refreshTabsUI();
   });
 
-  // 8. 零依賴 ZIP 打包器（一次下載全部 4 張 PNG）
+  // 11. 合成指定底色的最終 PNG Bytes（支援透明底 / 純白底 / 任意色底）
+  async function renderShotWithBgBytes(shot, bgColor) {
+    const srcUrl = getActiveShotUrl(shot);
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = srcUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+
+    if (bgColor && bgColor !== "transparent") {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.drawImage(img, 0, 0);
+
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const buf = await blob.arrayBuffer();
+    return new Uint8Array(buf);
+  }
+
+  // 12. 零依賴 ZIP 打包器
   const CRC_TABLE = (() => {
     const t = new Uint32Array(256);
     for (let i = 0; i < 256; i++) {
@@ -927,13 +1329,6 @@
       crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
     }
     return (crc ^ 0xFFFFFFFF) >>> 0;
-  }
-
-  function dataUrlToBytes(dataUrl) {
-    const bin = atob(dataUrl.split(",")[1]);
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return arr;
   }
 
   function buildZipBlob(entries) {
@@ -998,16 +1393,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
-  // 9. 檢視與下載視窗
-  document.getElementById("btn-review").addEventListener("click", () => {
+  // 13. 四向總覽與下載視窗
+  function openReviewModal() {
     const base = getCleanBaseName();
     const grid = document.getElementById("compare-grid");
     grid.innerHTML = ANGLES.map(a => {
       const shot = state.shots[a.idx];
+      const url = getActiveShotUrl(shot);
       return `
         <div class="compare-card">
-          <div class="compare-img-wrap">
-            ${shot ? `<img src="${shot}" alt="${a.label}" />` : `<span style="color:#6b7280;font-size:12px;margin:auto;">尚未拍攝</span>`}
+          <div class="compare-img-wrap ${state.bgColor === "transparent" ? "checker-bg" : ""}" style="${state.bgColor !== "transparent" ? `background-color:${state.bgColor};` : ""}">
+            ${url ? `<img src="${url}" alt="${a.label}" />` : `<span style="color:#6b7280;font-size:12px;margin:auto;">尚未拍攝</span>`}
           </div>
           <div class="compare-meta">
             <span style="font-weight:700;color:#e5e7eb;">${a.label}</span>
@@ -1018,47 +1414,58 @@
     }).join("");
 
     grid.querySelectorAll(".btn-dl-one").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const idx = parseInt(btn.dataset.idx);
         const shot = state.shots[idx];
-        if (shot) {
-          const blob = new Blob([dataUrlToBytes(shot)], { type: "image/png" });
-          downloadBlob(blob, `${base}${ANGLES[idx].suffix}.png`);
-        }
+        if (!shot) return;
+        const bytes = await renderShotWithBgBytes(shot, state.bgColor);
+        downloadBlob(new Blob([bytes], { type: "image/png" }), `${base}${ANGLES[idx].suffix}.png`);
       });
     });
 
     document.getElementById("review-modal").classList.add("show");
-  });
+  }
 
+  document.getElementById("btn-review").addEventListener("click", openReviewModal);
   document.getElementById("btn-close-review").addEventListener("click", () => {
     document.getElementById("review-modal").classList.remove("show");
   });
 
-  document.getElementById("btn-dl-zip").addEventListener("click", () => {
+  document.getElementById("btn-dl-zip").addEventListener("click", async () => {
     const base = getCleanBaseName();
+    const btnZip = document.getElementById("btn-dl-zip");
     const entries = [];
-    ANGLES.forEach(a => {
-      const shot = state.shots[a.idx];
-      if (shot) {
+
+    btnZip.disabled = true;
+    btnZip.textContent = "⏳ 正在合成圖檔並打包 ZIP...";
+
+    try {
+      for (const a of ANGLES) {
+        const shot = state.shots[a.idx];
+        if (!shot) continue;
+        const data = await renderShotWithBgBytes(shot, state.bgColor);
         entries.push({
           name: `${base}${a.suffix}.png`,
-          data: dataUrlToBytes(shot)
+          data
         });
       }
-    });
-    if (!entries.length) {
-      alert("尚未拍攝任何照片！");
-      return;
+
+      if (!entries.length) {
+        alert("尚未拍攝任何照片！");
+        return;
+      }
+
+      const zipBlob = buildZipBlob(entries);
+      downloadBlob(zipBlob, `${base}_4向素材.zip`);
+    } finally {
+      btnZip.disabled = false;
+      btnZip.textContent = "📦 一鍵打包下載 ZIP（全部已拍圖檔）";
     }
-    const zipBlob = buildZipBlob(entries);
-    downloadBlob(zipBlob, `${base}_4向素材.zip`);
   });
 
   updateCropBoxUI();
   refreshTabsUI();
   startCamera();
-})();
 </script>
 </body>
 </html>
