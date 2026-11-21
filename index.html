@@ -54,6 +54,11 @@
       flex-direction: column;
       gap: 6px;
       z-index: 20;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    #top-bar.hell-theme {
+      background: linear-gradient(180deg, #3b0d0d 0%, #1f0909 100%);
+      border-bottom-color: #dc2626;
     }
 
     .top-row {
@@ -86,6 +91,17 @@
       background: rgba(245, 185, 66, 0.18);
       color: var(--gold);
       border-color: rgba(245, 185, 66, 0.5);
+    }
+    .mode-pill.hell {
+      background: rgba(220, 38, 38, 0.32);
+      color: #fca5a5;
+      border-color: #ef4444;
+      animation: pulseHell 1.4s infinite;
+    }
+
+    @keyframes pulseHell {
+      0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+      50% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.75); }
     }
 
     .top-actions {
@@ -216,23 +232,29 @@
       top: 44px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(17, 24, 39, 0.9);
+      background: rgba(17, 24, 39, 0.92);
       border: 1px solid var(--gold-dim);
       color: #fef3c7;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: 600;
-      max-width: 92%;
+      font-weight: 700;
+      max-width: 94%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.25s;
-      z-index: 12;
+      z-index: 14;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     }
     #pa-banner.show { opacity: 1; }
+    #pa-banner.hell-alert {
+      background: rgba(127, 29, 29, 0.95);
+      border-color: #f87171;
+      color: #fee2e2;
+    }
 
     /* 3D 操控按鈕覆蓋層 */
     #controls-3d {
@@ -529,6 +551,7 @@
       margin-top: 2px;
     }
     .hud-val.cyan { color: var(--accent); }
+    .hud-val.danger { color: #f87171; }
     .hud-val.white { color: #f9fafb; font-size: clamp(11px, 3vw, 13px); }
 
     .hud-avatar-box {
@@ -542,6 +565,10 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+    }
+    .hud-avatar-box.hell-avatar {
+      border-color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
     }
     .hud-avatar-box img {
       width: 48px;
@@ -919,7 +946,7 @@
       <span class="hud-label" id="hud-lbl-2">櫃檯服務</span>
       <span class="hud-val cyan" id="hud-val-2">查詢 / 盲盒</span>
     </div>
-    <div class="hud-avatar-box">
+    <div class="hud-avatar-box" id="hud-avatar-box">
       <img id="hud-kobe-img" src="./Kobe.png" alt="Kobe" />
     </div>
     <div class="hud-box">
@@ -948,6 +975,7 @@
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxYlSNUXb_Lu2mslqN6TAwYUeSVyIfOpO8akA_kpsIbXgA3AAMe6iOc4M__o8XeA_nrag/exec";
   const KOBE_LINE_ID = "satanhotdog";
   const LINE_CONSULT_URL = `https://line.me/ti/p/~${KOBE_LINE_ID}`;
+  const SECRET_PASS = "0816";
 
   const MAP_SIZE = 40;
   const LOCAL_MAP_KEY = "hola_dadun_3d_map_v4";
@@ -961,24 +989,57 @@
     { ID: 23, Category: "Store", Name: "POS收銀櫃檯", File: "Cashier", W: 2, H: 1, ScaleH: 0.42, Dialog: "POS 收銀櫃檯（切換至遊戲模式可為排隊顧客結帳）。", LineBtn: "", Clicks: 0, TransformID: 0, Frames: 1, FPS: 1 }
   ];
 
+  // 10 位 NPC 顧客設定（對應 Guest1.png ~ Guest10.png，未上傳圖前自動顯示像素造型）
+  const NPC_GUEST_PROFILES = [
+    { idx: 1, file: "Guest1", type: "quick", title: "快閃採購客", color: "#38bdf8" },
+    { idx: 2, file: "Guest2", type: "quick", title: "快閃採購客", color: "#60a5fa" },
+    { idx: 3, file: "Guest3", type: "quick", title: "快閃採購客", color: "#34d399" },
+    { idx: 4, file: "Guest4", type: "quick", title: "快閃採購客", color: "#4ade80" },
+    { idx: 5, file: "Guest5", type: "quick", title: "快閃採購客", color: "#2dd4bf" },
+    { idx: 6, file: "Guest6", type: "big",   title: "成家大單客", color: "#f59e0b" },
+    { idx: 7, file: "Guest7", type: "big",   title: "成家大單客", color: "#fb923c" },
+    { idx: 8, file: "Guest8", type: "big",   title: "成家大單客", color: "#facc15" },
+    { idx: 9, file: "Guest9", type: "hesitant", title: "猶豫比價客", color: "#f472b6" },
+    { idx: 10, file: "Guest10", type: "hesitant", title: "猶豫比價客", color: "#c084fc" }
+  ];
+
+  // 離線或總表未載入時的備用展示商品池
+  const FALLBACK_CATALOG = [
+    { sku: "014092932", name: "La-Z-Boy 單人搖椅式功能布沙發", price: 19800, promoPrice: 15800, stock630: 2, show630: 1, stockYM: 8 },
+    { sku: "014288510", name: "La-Z-Boy 三人座全牛皮電動沙發", price: 69800, promoPrice: 56800, stock630: 1, show630: 1, stockYM: 4 },
+    { sku: "016552104", name: "北歐簡約布質三人沙發-低背", price: 24800, promoPrice: 18900, stock630: 1, show630: 1, stockYM: 6 },
+    { sku: "016552188", name: "現代極簡防貓抓布L型沙發-低背", price: 32800, promoPrice: 25900, stock630: 0, show630: 1, stockYM: 5 },
+    { sku: "014310922", name: "Kingsdown 皇家經典雙人獨立筒床墊", price: 45800, promoPrice: 36800, stock630: 2, show630: 1, stockYM: 10 },
+    { sku: "016789012", name: "實木岩板伸縮餐桌 160cm", price: 18900, promoPrice: 14900, stock630: 1, show630: 1, stockYM: 7 }
+  ];
+
+  const MANAGER_QUOTES = [
+    "👔 巡店主管：「KOBE 啊，這個月達成率怎麼樣？我看這區客人晃一晃就走了，話術要再積極一點！」",
+    "👔 巡店主管：「這組低背沙發擺在這邊動線有點卡，等一下客人少的時候把靠墊重新拍澎！」",
+    "👔 巡店主管：「總部剛發公告，這週客單價要再拉高 15%，看到猶豫的客人要主動遞名片！」",
+    "👔 巡店主管：「冷氣溫度調這樣剛剛好吧？記得隨時留意 POS 機有沒有客人排隊！」"
+  ];
+
   // =========================================================
   // 2. 全域狀態管理
   // =========================================================
   const state = {
     view: "3d",           // "3d" | "2d"
     mode: "browse",       // "browse" | "game"
-    floorStyle: "marble", // "marble" (大理石白) | "lightgray" (淺灰色)
+    difficulty: "normal", // "normal" | "hell"
+    floorStyle: "marble", // "marble" | "lightgray"
     adminUnlocked: false,
     editorTool: "place",  // "place" | "move" | "erase"
     editorCat: "NPC",
     selectedAssetId: 1,
-    placeDir: 0,          // 0:正面(0°), 1:朝右(90°), 2:背面(180°), 3:朝左(270°)
+    placeDir: 0,
     movingObj: null,
     modalToken: 0,
 
     assetsMap: new Map(),
     assetsList: [],
     promoProducts: [],
+    catalogPool: [],      // 符合 630庫存>=1 || 630展示>=1 || 楊梅庫存>=1 的可訂購商品
     currentMarqueeItem: null,
     skuCache: new Map(),
 
@@ -993,6 +1054,12 @@
       path: []
     },
 
+    centerRayHit: {
+      wallX: -1,
+      wallY: -1,
+      wallDist: 999
+    },
+
     cam2d: {
       visibleTiles: 40,
       centerX: 20,
@@ -1002,7 +1069,12 @@
     game: {
       revenue: 0,
       guests: [],
-      spawnTimer: 0
+      soldHistory: [],      // 已成交紀錄（地獄模式隨機退貨用）
+      spawnTimer: 0,
+      refundTimer: 0,
+      refundLockTimer: 0,   // 退貨處理中 POS 鎖定秒數
+      manager: null,        // 地獄模式巡店主管 NPC
+      managerTalkCooldown: 0
     },
 
     keys: { fwd: false, back: false, strafeL: false, strafeR: false, turnL: false, turnR: false },
@@ -1050,23 +1122,22 @@
     return null;
   }
 
+  function resolveSingleFileSprite(baseFile, relAngleRad) {
+    if (!baseFile) return null;
+    let suffix = "";
+    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360;
+    if (deg >= 45 && deg < 135) suffix = "_90";
+    else if (deg >= 135 && deg < 225) suffix = "_180";
+    else if (deg >= 225 && deg < 315) suffix = "_270";
+    return getSpriteImage(baseFile, suffix, true);
+  }
+
   function resolveAssetSprite(asset, relAngleRad, timeSec) {
     if (!asset || !asset.File) return null;
     const files = String(asset.File).split("|").map(s => s.trim()).filter(Boolean);
     const fps = parseFloat(asset.FPS) || 1;
     const frameIdx = files.length > 1 ? Math.floor(timeSec * fps) % files.length : 0;
-    const baseFile = files[frameIdx];
-
-    let suffix = "";
-    const deg = ((relAngleRad * 180 / Math.PI) % 360 + 360) % 360;
-    if (deg >= 45 && deg < 135) {
-      suffix = "_90";
-    } else if (deg >= 135 && deg < 225) {
-      suffix = "_180";
-    } else if (deg >= 225 && deg < 315) {
-      suffix = "_270";
-    }
-    return getSpriteImage(baseFile, suffix, true);
+    return resolveSingleFileSprite(files[frameIdx], relAngleRad);
   }
 
   function resolveBoxFaceSprite(asset, faceDir, timeSec) {
@@ -1091,6 +1162,17 @@
         getSpriteImage(f, "_270", true);
       });
     });
+    // 預載 10 位 NPC 與巡店主管圖檔（若尚未上傳會自動靜默退回像素小人）
+    NPC_GUEST_PROFILES.forEach(p => {
+      getSpriteImage(p.file, "", false);
+      getSpriteImage(p.file, "_90", false);
+      getSpriteImage(p.file, "_180", false);
+      getSpriteImage(p.file, "_270", true);
+    });
+    getSpriteImage("Manager", "", false);
+    getSpriteImage("Manager", "_90", false);
+    getSpriteImage("Manager", "_180", false);
+    getSpriteImage("Manager", "_270", true);
   }
 
   // =========================================================
@@ -1195,7 +1277,7 @@
   }
 
   // =========================================================
-  // 5. 載入試算表資料（GAS A:H 直連）
+  // 5. 載入試算表資料與可訂購商品池（630庫存/展示 >= 1 或 楊梅 >= 1）
   // =========================================================
   function registerAssets(list) {
     state.assetsMap.clear();
@@ -1231,6 +1313,37 @@
     renderPalette();
   }
 
+  function parseNumericPrice(val) {
+    if (typeof val === "number") return val > 0 ? val : 0;
+    if (!val) return 0;
+    const num = Number(String(val).replace(/[^0-9.-]/g, ""));
+    return (!isNaN(num) && num > 0) ? num : 0;
+  }
+
+  function isProductOrderable(item) {
+    const s630 = parseInt(item.stock630) || 0;
+    const sh630 = parseInt(item.show630) || 0;
+    const sYM = parseInt(item.stockYM) || 0;
+    return (s630 >= 1 || sh630 >= 1 || sYM >= 1);
+  }
+
+  function normalizeCatalogItem(raw) {
+    const promo = parseNumericPrice(raw.promoPrice);
+    const orig = parseNumericPrice(raw.price);
+    const effectivePrice = promo > 0 ? promo : (orig > 0 ? orig : 3900);
+    return {
+      sku: String(raw.sku || "").trim(),
+      name: String(raw.name || "精選家具").trim(),
+      price: orig,
+      promoPrice: promo,
+      effectivePrice,
+      stock630: parseInt(raw.stock630) || 0,
+      show630: parseInt(raw.show630) || 0,
+      stockYM: parseInt(raw.stockYM) || 0,
+      isLowBack: String(raw.name || "").includes("低背")
+    };
+  }
+
   async function queryProductsFromGAS(q) {
     const key = q.trim().toLowerCase();
     if (state.skuCache.has(key)) {
@@ -1243,6 +1356,46 @@
       return json.items;
     }
     return [];
+  }
+
+  async function refreshSellableCatalogPool() {
+    const mergedMap = new Map();
+    const ingest = (arr) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach(raw => {
+        if (!raw || !raw.sku) return;
+        if (!isProductOrderable(raw)) return;
+        const norm = normalizeCatalogItem(raw);
+        if (norm.sku) mergedMap.set(norm.sku, norm);
+      });
+    };
+
+    ingest(state.promoProducts);
+
+    // 嘗試抓取總表有庫存或有展示的商品
+    try {
+      const allItems = await queryProductsFromGAS("");
+      ingest(allItems);
+    } catch (_) {}
+
+    // 若總表回傳筆數較少，補抓常見家具與低背關鍵字擴充商品池
+    if (mergedMap.size < 10) {
+      for (const kw of ["沙發", "低背", "床", "桌", "椅"]) {
+        try {
+          const list = await queryProductsFromGAS(kw);
+          ingest(list);
+        } catch (_) {}
+      }
+    }
+
+    if (mergedMap.size === 0) {
+      FALLBACK_CATALOG.forEach(f => {
+        const norm = normalizeCatalogItem(f);
+        mergedMap.set(norm.sku, norm);
+      });
+    }
+
+    state.catalogPool = Array.from(mergedMap.values());
   }
 
   async function initDataPipeline() {
@@ -1281,7 +1434,8 @@
       }
     } catch (_) {}
 
-    loadPromoMarquee();
+    await loadPromoMarquee();
+    refreshSellableCatalogPool();
   }
 
   async function loadPromoMarquee() {
@@ -1321,7 +1475,7 @@
   setInterval(rotateMarqueeItem, 20000);
 
   // =========================================================
-  // 6. 3D 射線投射 + 3D 立體貼面透視引擎（明亮挑高展間＋大理石/淺灰地板）
+  // 6. 3D 射線投射 + 3D 立體貼面透視引擎（挑高展間＋大理石/淺灰地板）
   // =========================================================
   const canvas = document.getElementById("main-canvas");
   const ctx = canvas.getContext("2d");
@@ -1362,10 +1516,9 @@
     return { tx, tz };
   }
 
-  // 繪製隨視角旋轉移動的 3D 透視地板磁磚線
   function drawFloorPerspectiveGrid(px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, isMarble) {
     const NEAR_Z = 0.2;
-    const step = 2; // 每 2 格一道地磚接縫
+    const step = 2;
     ctx.save();
     ctx.strokeStyle = isMarble ? "rgba(148, 163, 184, 0.24)" : "rgba(71, 85, 105, 0.26)";
     ctx.lineWidth = 1;
@@ -1403,12 +1556,19 @@
     const H = canvas.height;
     const halfH = H * 0.5;
     const isMarble = (state.floorStyle === "marble");
+    const isHell = (state.mode === "game" && state.difficulty === "hell");
 
-    // 1. 明亮現代展間天花板（消除原本黑底）
+    // 1. 展間天花板（地獄模式微帶暗紅警示氛圍，平常亮白灰）
     const ceilGrad = ctx.createLinearGradient(0, 0, 0, halfH);
-    ceilGrad.addColorStop(0, "#dde3ec");
-    ceilGrad.addColorStop(0.55, "#edf1f7");
-    ceilGrad.addColorStop(1, "#f8fafc");
+    if (isHell) {
+      ceilGrad.addColorStop(0, "#451a1a");
+      ceilGrad.addColorStop(0.6, "#7f1d1d");
+      ceilGrad.addColorStop(1, "#fecaca");
+    } else {
+      ceilGrad.addColorStop(0, "#dde3ec");
+      ceilGrad.addColorStop(0.55, "#edf1f7");
+      ceilGrad.addColorStop(1, "#f8fafc");
+    }
     ctx.fillStyle = ceilGrad;
     ctx.fillRect(0, 0, W, halfH);
 
@@ -1430,6 +1590,7 @@
     const numRays = Math.min(W, 480);
     const stripW = W / numRays;
     const zBuffer = new Float32Array(numRays);
+    const centerRayIdx = Math.floor(numRays / 2);
 
     const px = state.player.x;
     const py = state.player.y;
@@ -1442,10 +1603,9 @@
     const planeY = dirX * planeLen;
     const invDet = 1.0 / (planeX * dirY - dirX * planeY);
 
-    // 繪製 3D 透視地磚線
     drawFloorPerspectiveGrid(px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, isMarble);
 
-    // 3. 投射挑高賣場外牆（牆底對齊 halfH + lineH * 0.45，牆高拉高 2.1 倍）
+    // 3. 投射挑高賣場外牆（2.1 倍高度）
     const WALL_HEIGHT_MULT = 2.1;
     for (let i = 0; i < numRays; i++) {
       const cameraX = (2 * i / numRays) - 1;
@@ -1500,31 +1660,32 @@
       const safeDist = Math.max(0.05, perpWallDist);
       zBuffer[i] = safeDist;
 
+      if (i === centerRayIdx) {
+        state.centerRayHit = { wallX: mapX, wallY: mapY, wallDist: safeDist };
+      }
+
       const unitH = H / safeDist;
       const wallBottom = halfH + unitH * 0.45;
       const wallH = unitH * WALL_HEIGHT_MULT;
       const wallTop = wallBottom - wallH;
 
-      // 保持原本溫潤米白牆色，提高環境亮度避免遠處發黑
       const shade = Math.max(0.76, 1 - safeDist / 110) * (side === 1 ? 0.92 : 1);
       const r = Math.floor(245 * shade);
-      const g = Math.floor(239 * shade);
-      const b = Math.floor(228 * shade);
+      const g = Math.floor((isHell ? 225 : 239) * shade);
+      const b = Math.floor((isHell ? 218 : 228) * shade);
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(i * stripW, wallTop, stripW + 0.8, wallH);
 
-      // 頂部天花板收邊線
       const trimH = Math.max(2, unitH * 0.04);
       ctx.fillStyle = `rgb(${Math.floor(215 * shade)},${Math.floor(208 * shade)},${Math.floor(196 * shade)})`;
       ctx.fillRect(i * stripW, wallTop, stripW + 0.8, trimH);
 
-      // 底部原木踢腳板（保持與地面比例一致）
       const baseH = unitH * 0.08;
       ctx.fillStyle = `rgb(${Math.floor(155 * shade)},${Math.floor(132 * shade)},${Math.floor(110 * shade)})`;
       ctx.fillRect(i * stripW, wallBottom - baseH, stripW + 0.8, baseH);
     }
 
-    // 4. 收集 3D 物件
+    // 4. 收集 3D 物件與遊戲角色
     const renderList = [];
 
     state.objects.forEach(obj => {
@@ -1594,17 +1755,41 @@
         const dy = g.y - py;
         const dist = Math.hypot(dx, dy);
         if (dist > 0.25 && dist < 40) {
+          const vecToCam = Math.atan2(py - g.y, px - g.x);
+          const relAngle = normalizeAngle(vecToCam - (g.facingAngle || 0));
           renderList.push({
             type: "guest",
             guest: g,
             cx: g.x,
             cy: g.y,
             sortDist: dist,
-            worldWidth: 0.75,
-            scaleH: 0.92
+            relAngle,
+            worldWidth: 0.78,
+            scaleH: 0.94
           });
         }
       });
+
+      if (state.game.manager) {
+        const m = state.game.manager;
+        const dx = m.x - px;
+        const dy = m.y - py;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0.25 && dist < 40) {
+          const vecToCam = Math.atan2(py - m.y, px - m.x);
+          const relAngle = normalizeAngle(vecToCam - (m.facingAngle || 0));
+          renderList.push({
+            type: "manager",
+            manager: m,
+            cx: m.x,
+            cy: m.y,
+            sortDist: dist,
+            relAngle,
+            worldWidth: 0.82,
+            scaleH: 0.98
+          });
+        }
+      }
     }
 
     renderList.sort((a, b) => b.sortDist - a.sortDist);
@@ -1678,6 +1863,7 @@
         }
 
         renderedHitboxes3D.push({
+          kind: "asset",
           isSprite: true,
           left: leftX,
           right: rightX,
@@ -1686,18 +1872,134 @@
           obj: item.obj
         });
       } else if (item.type === "guest") {
-        const drawH = baseUnitH * 0.9;
-        const drawW = drawH * 0.55;
+        const g = item.guest;
+        const resolved = resolveSingleFileSprite(g.profile.file, item.relAngle);
+        const drawH = baseUnitH * item.scaleH;
+        let drawW = drawH * 0.6;
+        if (resolved && resolved.img) {
+          drawW = drawH * (resolved.img.width / Math.max(1, resolved.img.height));
+        }
         const leftX = spriteScreenX - drawW / 2;
+        const rightX = leftX + drawW;
         const topY = floorY - drawH;
+
         const rayIdx = Math.floor((spriteScreenX / W) * numRays);
-        if (rayIdx >= 0 && rayIdx < numRays && transformY < zBuffer[rayIdx] + 0.2) {
-          drawPixelGuest3D(ctx, leftX, topY, drawW, drawH, item.guest);
+        if (rayIdx >= 0 && rayIdx < numRays && transformY < zBuffer[rayIdx] + 0.25) {
+          if (resolved && resolved.img) {
+            ctx.save();
+            if (resolved.flipX) {
+              ctx.translate(spriteScreenX, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(resolved.img, -drawW / 2, topY, drawW, drawH);
+            } else {
+              ctx.drawImage(resolved.img, leftX, topY, drawW, drawH);
+            }
+            ctx.restore();
+          } else {
+            drawPixelGuest3D(ctx, leftX, topY, drawW, drawH, g.profile.color);
+          }
+
+          drawFloatingStatusBubble(ctx, spriteScreenX, topY - 8, getGuestBubbleInfo(g));
+
+          renderedHitboxes3D.push({
+            kind: "guest",
+            isSprite: true,
+            left: leftX,
+            right: rightX,
+            top: topY,
+            bottom: floorY,
+            guest: g
+          });
+        }
+      } else if (item.type === "manager") {
+        const m = item.manager;
+        const resolved = resolveSingleFileSprite("Manager", item.relAngle);
+        const drawH = baseUnitH * item.scaleH;
+        let drawW = drawH * 0.62;
+        if (resolved && resolved.img) {
+          drawW = drawH * (resolved.img.width / Math.max(1, resolved.img.height));
+        }
+        const leftX = spriteScreenX - drawW / 2;
+        const rightX = leftX + drawW;
+        const topY = floorY - drawH;
+
+        const rayIdx = Math.floor((spriteScreenX / W) * numRays);
+        if (rayIdx >= 0 && rayIdx < numRays && transformY < zBuffer[rayIdx] + 0.25) {
+          if (resolved && resolved.img) {
+            ctx.save();
+            if (resolved.flipX) {
+              ctx.translate(spriteScreenX, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(resolved.img, -drawW / 2, topY, drawW, drawH);
+            } else {
+              ctx.drawImage(resolved.img, leftX, topY, drawW, drawH);
+            }
+            ctx.restore();
+          } else {
+            drawPixelGuest3D(ctx, leftX, topY, drawW, drawH, "#dc2626", true);
+          }
+
+          drawFloatingStatusBubble(ctx, spriteScreenX, topY - 8, {
+            text: "👔 巡店主管（清場光環）",
+            bg: "rgba(153, 27, 27, 0.92)",
+            fg: "#fef2f2"
+          });
+
+          renderedHitboxes3D.push({
+            kind: "manager",
+            isSprite: true,
+            left: leftX,
+            right: rightX,
+            top: topY,
+            bottom: floorY,
+            manager: m
+          });
         }
       }
     }
 
     updateCrosshairTarget();
+  }
+
+  function getGuestBubbleInfo(g) {
+    if (g.state === "hesitant") {
+      return { text: `🤔 考慮中（點調查推坑）`, bg: "rgba(180, 83, 9, 0.92)", fg: "#fef3c7" };
+    }
+    if (g.state === "lowback_complain") {
+      return { text: `😫 脖子靠不到好痠（低背）`, bg: "rgba(185, 28, 28, 0.94)", fg: "#fee2e2" };
+    }
+    if (g.state === "spooked") {
+      return { text: `💦 只是看看/壓力好大`, bg: "rgba(55, 65, 81, 0.9)", fg: "#e5e7eb" };
+    }
+    if (g.state === "queue") {
+      return { text: `💳 待結帳 $${g.targetProduct.effectivePrice.toLocaleString()}`, bg: "rgba(21, 128, 61, 0.92)", fg: "#dcfce7" };
+    }
+    if (g.state === "leave") {
+      return { text: `👋 離店中`, bg: "rgba(31, 41, 55, 0.82)", fg: "#d1d5db" };
+    }
+    return { text: `🛍️ 看：${g.targetProduct.name.slice(0, 8)}`, bg: "rgba(15, 23, 42, 0.84)", fg: "#f8fafc" };
+  }
+
+  function drawFloatingStatusBubble(ctx, centerX, bottomY, info) {
+    ctx.save();
+    ctx.font = "bold 11px sans-serif";
+    const padX = 8;
+    const textW = ctx.measureText(info.text).width;
+    const boxW = textW + padX * 2;
+    const boxH = 20;
+    const x = centerX - boxW / 2;
+    const y = bottomY - boxH;
+
+    ctx.fillStyle = info.bg;
+    ctx.beginPath();
+    ctx.roundRect(x, y, boxW, boxH, 6);
+    ctx.fill();
+
+    ctx.fillStyle = info.fg;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(info.text, centerX, y + boxH / 2);
+    ctx.restore();
   }
 
   function draw3DBoxFace(item, px, py, dirX, dirY, planeX, planeY, invDet, W, H, halfH, numRays, zBuffer, timeSec) {
@@ -1826,6 +2128,7 @@
       }
 
       renderedHitboxes3D.push({
+        kind: "asset",
         isSprite: false,
         left: hitLeft,
         right: hitRight,
@@ -1838,21 +2141,23 @@
 
   let renderedHitboxes3D = [];
 
-  function drawPixelGuest3D(ctx, x, y, w, h, guest) {
+  function drawPixelGuest3D(ctx, x, y, w, h, shirtColor, isBoss = false) {
     ctx.save();
-    ctx.fillStyle = guest.color;
+    // 身體西裝/上衣
+    ctx.fillStyle = shirtColor;
     ctx.fillRect(x + w * 0.2, y + h * 0.35, w * 0.6, h * 0.45);
+    if (isBoss) {
+      // 主管領帶
+      ctx.fillStyle = "#facc15";
+      ctx.fillRect(x + w * 0.46, y + h * 0.36, w * 0.08, h * 0.32);
+    }
+    // 頭部
     ctx.fillStyle = "#fde68a";
     ctx.fillRect(x + w * 0.25, y + h * 0.08, w * 0.5, h * 0.27);
+    // 雙腿
     ctx.fillStyle = "#1e293b";
     ctx.fillRect(x + w * 0.25, y + h * 0.8, w * 0.2, h * 0.2);
     ctx.fillRect(x + w * 0.55, y + h * 0.8, w * 0.2, h * 0.2);
-    ctx.fillStyle = "rgba(0,0,0,0.75)";
-    ctx.fillRect(x, y - 22, w, 18);
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(guest.state === "queue" ? "💳待結帳" : "🛍️逛展間", x + w / 2, y - 9);
     ctx.restore();
   }
 
@@ -1957,13 +2262,25 @@
       state.game.guests.forEach(g => {
         const gx = offsetX + g.x * tilePx;
         const gy = offsetY + g.y * tilePx;
-        ctx.fillStyle = g.color;
+        ctx.fillStyle = g.profile.color;
         ctx.beginPath();
         ctx.arc(gx, gy, Math.max(4, tilePx * 0.32), 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#fff";
         ctx.stroke();
       });
+
+      if (state.game.manager) {
+        const mx = offsetX + state.game.manager.x * tilePx;
+        const my = offsetY + state.game.manager.y * tilePx;
+        ctx.fillStyle = "#dc2626";
+        ctx.beginPath();
+        ctx.arc(mx, my, Math.max(5, tilePx * 0.38), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fef08a";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     }
 
     const kx = offsetX + state.player.x * tilePx;
@@ -1997,8 +2314,15 @@
   }
 
   // =========================================================
-  // 8. 互動邏輯（加長 4.0 格偵測距離＋隔櫃穿透鎖定後方貓咪）
+  // 8. 互動邏輯（含隱藏地獄暗門、顧客話術推坑、櫃檯結帳）
   // =========================================================
+  function isAimingSecretHellWall() {
+    const h = state.centerRayHit;
+    if (!h || h.wallDist > 3.2) return false;
+    // 西北角隱藏牆壁區域 (1,0), (0,1), (0,0)
+    return (h.wallX <= 1 && h.wallY <= 1);
+  }
+
   function findNpcBehindCounter(counterObj) {
     if (!counterObj) return null;
     const b = getObjectBounds(counterObj);
@@ -2026,6 +2350,30 @@
       }
     }
     return null;
+  }
+
+  function findGuestAhead() {
+    if (state.mode !== "game") return null;
+    const px = state.player.x;
+    const py = state.player.y;
+    const cos = Math.cos(state.player.angle);
+    const sin = Math.sin(state.player.angle);
+
+    let best = null;
+    let bestDist = 3.6;
+
+    for (const g of state.game.guests) {
+      const dx = g.x - px;
+      const dy = g.y - py;
+      const dist = Math.hypot(dx, dy);
+      if (dist > bestDist || dist < 0.2) continue;
+      const dot = (dx * cos + dy * sin) / dist;
+      if (dot > 0.86) {
+        best = g;
+        bestDist = dist;
+      }
+    }
+    return best;
   }
 
   function findTargetObjectAhead() {
@@ -2075,6 +2423,23 @@
 
   function updateCrosshairTarget() {
     const targetEl = document.getElementById("hud-target");
+
+    if (state.mode === "game") {
+      const guestAhead = findGuestAhead();
+      if (guestAhead) {
+        if (guestAhead.state === "hesitant") {
+          targetEl.textContent = "猶豫客(點調查推坑)";
+          return;
+        }
+        if (guestAhead.state === "lowback_complain") {
+          targetEl.textContent = "低背抱怨客(點調查)";
+          return;
+        }
+        targetEl.textContent = `${guestAhead.profile.title}`;
+        return;
+      }
+    }
+
     const { obj, behindNpc } = findTargetObjectAhead();
     if (behindNpc) {
       const a = state.assetsMap.get(behindNpc.id);
@@ -2083,11 +2448,67 @@
       const a = state.assetsMap.get(obj.id);
       targetEl.textContent = a ? a.Name : `物件#${obj.id}`;
     } else {
+      // 隱藏地獄入口故意維持顯示「前方走道」，不洩漏暗門位置
       targetEl.textContent = "前方走道";
     }
   }
 
+  function interactWithGuest(g) {
+    if (!g) return;
+    if (g.state === "hesitant") {
+      g.state = "queue";
+      g.queueTimer = 14;
+      g.path = getPathToNearestPOS(g.x, g.y);
+      showPA(`🗣️ KOBE 專業介紹奏效！${g.profile.title} 決定購買【${g.targetProduct.name}】前往結帳！`);
+      updateHudStatus();
+      return;
+    }
+    if (g.state === "lowback_complain") {
+      g.state = "queue";
+      g.queueTimer = 14;
+      g.path = getPathToNearestPOS(g.x, g.y);
+      showPA(`🔥 神級話術！「低背設計視覺最通透、搭腰枕最服貼！」成功推坑【${g.targetProduct.name}】！`);
+      updateHudStatus();
+      return;
+    }
+    showPA(`💬 ${g.profile.title} 正在參觀【${g.targetProduct.name}】（售價 $${g.targetProduct.effectivePrice.toLocaleString()}）`);
+  }
+
+  function triggerSecretHellPrompt() {
+    if (state.mode === "game" && state.difficulty === "hell") {
+      if (confirm("目前已處於【地獄巡店模式】，要切換回正常模式嗎？")) {
+        switchGameDifficulty("normal");
+      }
+      return;
+    }
+    const pwd = prompt("🧱 這塊牆壁後面似乎傳來奇怪的聲音...\n請輸入暗號密碼：");
+    if (pwd === SECRET_PASS) {
+      if (state.mode !== "game") {
+        enterGameMode("hell");
+      } else {
+        switchGameDifficulty("hell");
+      }
+    } else if (pwd !== null) {
+      showPA("🧱 牆壁毫無反應，看來暗號不對。");
+    }
+  }
+
   function triggerInteraction(specificObj = null) {
+    // 1. 優先檢查是否對準西北角隱藏暗門牆壁
+    if (!specificObj && isAimingSecretHellWall()) {
+      triggerSecretHellPrompt();
+      return;
+    }
+
+    // 2. 遊戲模式下檢查準心前方是否有需要推坑的顧客
+    if (!specificObj && state.mode === "game") {
+      const guestAhead = findGuestAhead();
+      if (guestAhead) {
+        interactWithGuest(guestAhead);
+        return;
+      }
+    }
+
     let targetObj = specificObj;
     let behindNpc = null;
 
@@ -2103,7 +2524,7 @@
     }
 
     if (!targetObj) {
-      showPA("前方沒有可互動的商品或服務人員，請對準櫃檯或貓咪再試。");
+      showPA("前方沒有可互動的商品或服務人員，請對準櫃檯或顧客再試。");
       return;
     }
 
@@ -2123,13 +2544,23 @@
 
     if (asset.ID === 22 || asset.ID === 23) {
       if (state.mode === "game") {
+        if (state.game.refundLockTimer > 0) {
+          showPA(`⚠️ 客訴退貨單處理中（剩 ${Math.ceil(state.game.refundLockTimer)} 秒），POS 機暫時鎖定！`, true);
+          return;
+        }
         const qIdx = state.game.guests.findIndex(g => g.state === "queue");
         if (qIdx !== -1) {
           const served = state.game.guests.splice(qIdx, 1)[0];
-          const bonus = Math.round(served.spend * 1.1);
+          const basePrice = served.targetProduct.effectivePrice;
+          const bonus = Math.round(basePrice * 1.1);
           state.game.revenue += bonus;
+          state.game.soldHistory.push({
+            name: served.targetProduct.name,
+            sku: served.targetProduct.sku,
+            amount: bonus
+          });
           updateHudStatus();
-          showPA(`💰 親自在 POS 櫃檯結帳完成！獲得 VIP 加成營收 $${bonus.toLocaleString()}`);
+          showPA(`💰 POS 結帳【${served.targetProduct.name}】！含專員 10% 加成入帳 $${bonus.toLocaleString()}`);
         } else {
           showPA("目前 POS 櫃檯沒有排隊結帳的顧客。");
         }
@@ -2148,7 +2579,7 @@
   }
 
   // =========================================================
-  // 9. 互動視窗內容（無官網外連＋防連點＋0 秒秒開盲盒提案卡）
+  // 9. 互動視窗內容（SKU 查詢 + 60 天 VIP 盲盒提案卡）
   // =========================================================
   function openModal(title, html) {
     state.modalToken += 1;
@@ -2489,7 +2920,7 @@
   }
 
   // =========================================================
-  // 10. 地板材質切換、模式切換（3D逛逛 / 遊戲模式）與視角切換（3D / 2D）
+  // 10. 地板材質切換、模式切換（逛逛 / 普通遊戲 / 地獄遊戲）與視角切換
   // =========================================================
   const btnFloorStyle = document.getElementById("btn-floor-style");
   btnFloorStyle.addEventListener("click", () => {
@@ -2505,25 +2936,89 @@
   const btnToggleGame = document.getElementById("btn-toggle-game");
   const btnToggleView = document.getElementById("btn-toggle-view");
   const modeBadge = document.getElementById("mode-badge");
+  const topBar = document.getElementById("top-bar");
+  const avatarBox = document.getElementById("hud-avatar-box");
+
+  function enterGameMode(diff = "normal") {
+    state.mode = "game";
+    state.difficulty = diff;
+    state.game.revenue = 0;
+    state.game.guests = [];
+    state.game.soldHistory = [];
+    state.game.spawnTimer = 3.5;
+    state.game.refundTimer = 0;
+    state.game.refundLockTimer = 0;
+    state.game.managerTalkCooldown = 0;
+
+    if (state.catalogPool.length === 0) {
+      refreshSellableCatalogPool();
+    }
+
+    btnToggleGame.textContent = "🏪 返回 3D 逛逛";
+    btnToggleGame.classList.remove("primary");
+
+    if (diff === "hell") {
+      modeBadge.textContent = "🔥 地獄巡店中";
+      modeBadge.className = "mode-pill hell";
+      topBar.classList.add("hell-theme");
+      avatarBox.classList.add("hell-avatar");
+      spawnPatrolManager();
+      showPA("⚠️ 已進入【地獄巡店模式】— 客訴退貨、主管巡店、低背沙發滯銷全面啟動！", true);
+    } else {
+      state.game.manager = null;
+      modeBadge.textContent = "營業中(普通)";
+      modeBadge.className = "mode-pill game";
+      topBar.classList.remove("hell-theme");
+      avatarBox.classList.remove("hell-avatar");
+      showPA("🔔 HOLA 大墩店開始營業！已載入總表可訂購商品池，10 位顧客陸續進店！");
+    }
+    updateHudStatus();
+  }
+
+  function switchGameDifficulty(diff) {
+    state.difficulty = diff;
+    if (diff === "hell") {
+      modeBadge.textContent = "🔥 地獄巡店中";
+      modeBadge.className = "mode-pill hell";
+      topBar.classList.add("hell-theme");
+      avatarBox.classList.add("hell-avatar");
+      if (!state.game.manager) spawnPatrolManager();
+      showPA("⚠️ 警告：已切換為【地獄巡店模式】— 祝您今天順利下班！", true);
+    } else {
+      state.game.manager = null;
+      state.game.refundLockTimer = 0;
+      modeBadge.textContent = "營業中(普通)";
+      modeBadge.className = "mode-pill game";
+      topBar.classList.remove("hell-theme");
+      avatarBox.classList.remove("hell-avatar");
+      showPA("✨ 已切回【普通營業模式】，巡店主管已離開現場。");
+    }
+    updateHudStatus();
+  }
+
+  function exitGameMode() {
+    state.mode = "browse";
+    state.difficulty = "normal";
+    state.game.guests = [];
+    state.game.manager = null;
+    state.game.refundLockTimer = 0;
+
+    btnToggleGame.textContent = "🎮 進入遊戲模式";
+    btnToggleGame.classList.add("primary");
+    modeBadge.textContent = "3D逛逛";
+    modeBadge.className = "mode-pill";
+    topBar.classList.remove("hell-theme");
+    avatarBox.classList.remove("hell-avatar");
+    showPA("✨ 已切換回純淨 3D 虛擬展間導覽模式。");
+    updateHudStatus();
+  }
 
   btnToggleGame.addEventListener("click", () => {
     if (state.mode === "browse") {
-      state.mode = "game";
-      btnToggleGame.textContent = "🏪 返回 3D 逛逛";
-      btnToggleGame.classList.remove("primary");
-      modeBadge.textContent = "遊戲營業中";
-      modeBadge.classList.add("game");
-      showPA("🔔 HOLA 大墩店開始營業！AI 顧客進店挑選並前往雙收銀台排隊！");
+      enterGameMode("normal");
     } else {
-      state.mode = "browse";
-      state.game.guests = [];
-      btnToggleGame.textContent = "🎮 進入遊戲模式";
-      btnToggleGame.classList.add("primary");
-      modeBadge.textContent = "3D逛逛";
-      modeBadge.classList.remove("game");
-      showPA("✨ 已切換回純淨 3D 虛擬展間導覽模式。");
+      exitGameMode();
     }
-    updateHudStatus();
   });
 
   btnToggleView.addEventListener("click", () => {
@@ -2560,27 +3055,39 @@
     const v2 = document.getElementById("hud-val-2");
 
     if (state.mode === "game") {
-      l1.textContent = "今日營收";
+      l1.textContent = state.difficulty === "hell" ? "地獄營收" : "今日營收";
       v1.textContent = `$${state.game.revenue.toLocaleString()}`;
-      l2.textContent = "店內 / 排隊";
-      const totalG = state.game.guests.length;
-      const queueG = state.game.guests.filter(g => g.state === "queue").length;
-      v2.textContent = `${totalG}逛 / ${queueG}排`;
+      v1.className = state.game.revenue < 0 ? "hud-val danger" : "hud-val";
+
+      if (state.game.refundLockTimer > 0) {
+        l2.textContent = "客訴退貨中";
+        v2.textContent = `POS鎖 ${Math.ceil(state.game.refundLockTimer)}s`;
+        v2.className = "hud-val danger";
+      } else {
+        l2.textContent = "店內 / 排隊";
+        const totalG = state.game.guests.length;
+        const queueG = state.game.guests.filter(g => g.state === "queue").length;
+        v2.textContent = `${totalG}逛 / ${queueG}排`;
+        v2.className = "hud-val cyan";
+      }
     } else {
       l1.textContent = "展間模式";
       v1.textContent = "自由巡店";
+      v1.className = "hud-val";
       l2.textContent = "櫃檯服務";
       v2.textContent = "查詢 / 盲盒";
+      v2.className = "hud-val cyan";
     }
   }
 
   let paTimer = null;
-  function showPA(msg) {
+  function showPA(msg, isHellAlert = false) {
     const el = document.getElementById("pa-banner");
     el.textContent = msg;
+    el.classList.toggle("hell-alert", isHellAlert);
     el.classList.add("show");
     clearTimeout(paTimer);
-    paTimer = setTimeout(() => el.classList.remove("show"), 3600);
+    paTimer = setTimeout(() => el.classList.remove("show"), 4200);
   }
 
   // =========================================================
@@ -2593,7 +3100,7 @@
       return;
     }
     const pwd = prompt("請輸入管理員密碼以開啟 2D 裝潢編輯：");
-    if (pwd === "0816") {
+    if (pwd === SECRET_PASS) {
       state.adminUnlocked = true;
       document.getElementById("admin-unlock-btn").textContent = "🛠️ 裝潢面板";
       document.getElementById("builder-panel").classList.add("show");
@@ -2692,7 +3199,7 @@
         method: "POST",
         body: JSON.stringify({
           action: "saveMap3D",
-          password: "0816",
+          password: SECRET_PASS,
           code,
           publicEdit: false
         })
@@ -2709,7 +3216,7 @@
   });
 
   // =========================================================
-  // 12. 操控系統
+  // 12. 操控系統（支援點擊 3D 顧客/主管/物件）
   // =========================================================
   document.querySelectorAll(".ctrl-btn[data-key]").forEach(btn => {
     const k = btn.dataset.key;
@@ -2855,6 +3362,14 @@
         const box = renderedHitboxes3D[i];
         if (!box.isSprite) continue;
         if (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom) {
+          if (box.kind === "guest") {
+            interactWithGuest(box.guest);
+            return;
+          }
+          if (box.kind === "manager") {
+            showPA(MANAGER_QUOTES[Math.floor(Math.random() * MANAGER_QUOTES.length)], true);
+            return;
+          }
           triggerInteraction(box.obj);
           return;
         }
@@ -2969,7 +3484,7 @@
   }
 
   // =========================================================
-  // 13. 遊戲迴圈
+  // 13. 遊戲迴圈（普通難度 & 地獄難度雙軌模擬）
   // =========================================================
   function tryMovePlayer(dx, dy) {
     const r = 0.28;
@@ -3001,32 +3516,186 @@
     else state.player.dir2d = 1;
   }
 
+  function pickProductForGuest(guestType) {
+    const pool = state.catalogPool.length > 0 ? state.catalogPool : FALLBACK_CATALOG.map(normalizeCatalogItem);
+    if (guestType === "big") {
+      const highTier = pool.filter(p => p.effectivePrice >= 10000);
+      if (highTier.length > 0) return highTier[Math.floor(Math.random() * highTier.length)];
+    } else if (guestType === "quick") {
+      const midLow = pool.filter(p => p.effectivePrice < 15000);
+      if (midLow.length > 0) return midLow[Math.floor(Math.random() * midLow.length)];
+    }
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function pickBrowseDestination() {
+    const furnitures = state.objects.filter(o => {
+      const a = state.assetsMap.get(o.id);
+      return a && a.Category === "Furniture";
+    });
+    if (furnitures.length > 0) {
+      const target = furnitures[Math.floor(Math.random() * furnitures.length)];
+      const b = getObjectBounds(target);
+      const candidates = [
+        [b.minX - 1, Math.floor(b.centerY)],
+        [b.maxX + 1, Math.floor(b.centerY)],
+        [Math.floor(b.centerX), b.minY - 1],
+        [Math.floor(b.centerX), b.maxY + 1]
+      ];
+      for (const [cx, cy] of candidates) {
+        if (isCellWalkable(cx, cy)) return { x: cx, y: cy };
+      }
+    }
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const rx = 6 + Math.floor(Math.random() * 25);
+      const ry = 6 + Math.floor(Math.random() * 24);
+      if (isCellWalkable(rx, ry)) return { x: rx, y: ry };
+    }
+    return { x: 20, y: 26 };
+  }
+
+  function getPathToNearestPOS(fromX, fromY) {
+    const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
+    let targetX = 32;
+    let targetY = 35;
+    if (posCounters.length > 0) {
+      const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
+      const b = getObjectBounds(chosen);
+      if (chosen.dir === 0) { targetX = chosen.x; targetY = Math.min(MAP_SIZE - 2, b.maxY + 1); }
+      else if (chosen.dir === 2) { targetX = chosen.x; targetY = Math.max(1, b.minY - 1); }
+      else if (chosen.dir === 1) { targetX = Math.min(MAP_SIZE - 2, b.maxX + 1); targetY = chosen.y; }
+      else { targetX = Math.max(1, b.minX - 1); targetY = chosen.y; }
+    }
+    return findPath2D(Math.floor(fromX), Math.floor(fromY), targetX, targetY);
+  }
+
+  function spawnPatrolManager() {
+    state.game.manager = {
+      x: 10.5,
+      y: 12.5,
+      facingAngle: 0,
+      waitTimer: 0,
+      path: findPath2D(10, 12, 26, 24)
+    };
+  }
+
   function updateGameSimulation(dt) {
     if (state.mode !== "game") return;
+    const isHell = (state.difficulty === "hell");
 
+    // 1. 地獄模式：退貨處理冷卻倒數與隨機瑕疵退貨事件
+    if (state.game.refundLockTimer > 0) {
+      state.game.refundLockTimer = Math.max(0, state.game.refundLockTimer - dt);
+      updateHudStatus();
+    }
+
+    if (isHell && state.game.soldHistory.length > 0) {
+      state.game.refundTimer += dt;
+      if (state.game.refundTimer >= 24) {
+        state.game.refundTimer = 0;
+        if (Math.random() < 0.72) {
+          const idx = Math.floor(Math.random() * state.game.soldHistory.length);
+          const refunded = state.game.soldHistory.splice(idx, 1)[0];
+          state.game.revenue -= refunded.amount;
+          state.game.refundLockTimer = 5;
+          showPA(`📞 客訴來電：客人反映【${refunded.name}】邊角有瑕疵要求全額退貨！倒扣 $${refunded.amount.toLocaleString()}`, true);
+          updateHudStatus();
+        }
+      }
+    }
+
+    // 2. 地獄模式：巡店主管移動、清場光環與主管拷問
+    if (isHell && state.game.manager) {
+      const m = state.game.manager;
+      if (state.game.managerTalkCooldown > 0) {
+        state.game.managerTalkCooldown -= dt;
+      }
+
+      if (m.path && m.path.length > 0) {
+        const next = m.path[0];
+        const dx = next.x - m.x;
+        const dy = next.y - m.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 0.14) {
+          m.path.shift();
+        } else {
+          m.facingAngle = Math.atan2(dy, dx);
+          m.x += (dx / dist) * 1.65 * dt;
+          m.y += (dy / dist) * 1.65 * dt;
+        }
+      } else {
+        m.waitTimer += dt;
+        if (m.waitTimer >= 2.0) {
+          m.waitTimer = 0;
+          const dest = pickBrowseDestination();
+          m.path = findPath2D(Math.floor(m.x), Math.floor(m.y), dest.x, dest.y);
+        }
+      }
+
+      // 清場光環：主管經過正在逛的顧客身邊，顧客壓力大直接離開
+      for (const g of state.game.guests) {
+        if (g.state === "browse" || g.state === "hesitant" || g.state === "lowback_complain") {
+          if (Math.hypot(g.x - m.x, g.y - m.y) < 3.2) {
+            g.state = "spooked";
+            g.path = findPath2D(Math.floor(g.x), Math.floor(g.y), 19, 38);
+          }
+        }
+      }
+
+      // 主管正面撞見玩家（若當下沒有開啟任何彈窗，跳出靈魂拷問）
+      if (
+        state.game.managerTalkCooldown <= 0 &&
+        !document.getElementById("modal-backdrop").classList.contains("show") &&
+        Math.hypot(m.x - state.player.x, m.y - state.player.y) < 1.35
+      ) {
+        state.game.managerTalkCooldown = 28;
+        const quote = MANAGER_QUOTES[Math.floor(Math.random() * MANAGER_QUOTES.length)];
+        openModal("⚠️ 主管巡店靈魂拷問", `
+          <div class="npc-speech">
+            <img src="./Manager.png" alt="巡店主管" onerror="this.style.display='none'" />
+            <div>${quote}</div>
+          </div>
+          <button class="btn-action" style="width:100%;" id="btn-boss-ack">🫡 收到！立刻加強現場銷售！</button>
+        `);
+        document.getElementById("btn-boss-ack").onclick = closeModal;
+      }
+    }
+
+    // 3. 顧客進店生成（地獄模式因主管巡店，進店間隔加倍＝人潮減半）
+    const spawnInterval = isHell ? 9.5 : 4.8;
+    const maxGuests = isHell ? 5 : 8;
     state.game.spawnTimer += dt;
-    if (state.game.spawnTimer > 5.5 && state.game.guests.length < 8) {
+
+    if (state.game.spawnTimer >= spawnInterval && state.game.guests.length < maxGuests) {
       state.game.spawnTimer = 0;
-      const colors = ["#f472b6", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
-      let tx = 10 + Math.floor(Math.random() * 20);
-      let ty = 8 + Math.floor(Math.random() * 16);
-      if (!isCellWalkable(tx, ty)) { tx = 20; ty = 30; }
+      const usedIdx = new Set(state.game.guests.map(g => g.profile.idx));
+      const available = NPC_GUEST_PROFILES.filter(p => !usedIdx.has(p.idx));
+      const pool = available.length > 0 ? available : NPC_GUEST_PROFILES;
+      const profile = pool[Math.floor(Math.random() * pool.length)];
+
+      const product = pickProductForGuest(profile.type);
+      const dest = pickBrowseDestination();
 
       state.game.guests.push({
-        id: Date.now() + Math.random(),
+        uid: Date.now() + Math.random(),
+        profile,
+        targetProduct: product,
         x: 19.5,
         y: 38.2,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        facingAngle: -Math.PI / 2,
         state: "browse",
-        browseTime: 6 + Math.random() * 6,
-        spend: 1200 + Math.floor(Math.random() * 48) * 100,
-        path: findPath2D(19, 38, tx, ty)
+        browseTime: profile.type === "big" ? 7 : 4.5,
+        decisionTimer: 0,
+        queueTimer: 12,
+        path: findPath2D(19, 38, dest.x, dest.y)
       });
       updateHudStatus();
     }
 
+    // 4. 更新每位顧客行為狀態機
     for (let i = state.game.guests.length - 1; i >= 0; i--) {
       const g = state.game.guests[i];
+
       if (g.path && g.path.length > 0) {
         const next = g.path[0];
         const dx = next.x - g.x;
@@ -3035,35 +3704,62 @@
         if (dist < 0.12) {
           g.path.shift();
         } else {
-          g.x += (dx / dist) * 2.1 * dt;
-          g.y += (dy / dist) * 2.1 * dt;
+          g.facingAngle = Math.atan2(dy, dx);
+          const spd = (g.state === "spooked" || g.state === "leave") ? 2.6 : 2.05;
+          g.x += (dx / dist) * spd * dt;
+          g.y += (dy / dist) * spd * dt;
         }
-      } else if (g.state === "browse") {
+        continue;
+      }
+
+      if (g.state === "browse") {
         g.browseTime -= dt;
         if (g.browseTime <= 0) {
-          const posCounters = state.objects.filter(o => o.id === 22 || o.id === 23);
-          let targetX = 32;
-          let targetY = 35;
-          if (posCounters.length > 0) {
-            const chosen = posCounters[Math.floor(Math.random() * posCounters.length)];
-            const b = getObjectBounds(chosen);
-            if (chosen.dir === 0) { targetX = chosen.x; targetY = Math.min(MAP_SIZE - 2, b.maxY + 1); }
-            else if (chosen.dir === 2) { targetX = chosen.x; targetY = Math.max(1, b.minY - 1); }
-            else if (chosen.dir === 1) { targetX = Math.min(MAP_SIZE - 2, b.maxX + 1); targetY = chosen.y; }
-            else { targetX = Math.max(1, b.minX - 1); targetY = chosen.y; }
+          // 地獄模式條件 3：低背沙發難賣（85% 抱怨後放棄）
+          if (isHell && g.targetProduct.isLowBack) {
+            if (Math.random() < 0.85) {
+              g.state = "lowback_complain";
+              g.decisionTimer = 11;
+              continue;
+            }
+          }
+          // 猶豫比價客會先進入考慮狀態等待專員介紹
+          if (g.profile.type === "hesitant") {
+            g.state = "hesitant";
+            g.decisionTimer = 11;
+            continue;
           }
           g.state = "queue";
-          g.queueTimer = 10;
-          g.path = findPath2D(Math.floor(g.x), Math.floor(g.y), targetX, targetY);
+          g.queueTimer = 12;
+          g.path = getPathToNearestPOS(g.x, g.y);
           updateHudStatus();
         }
+      } else if (g.state === "hesitant" || g.state === "lowback_complain") {
+        g.decisionTimer -= dt;
+        if (g.decisionTimer <= 0) {
+          if (g.state === "lowback_complain") {
+            showPA(`💨 顧客嫌【${g.targetProduct.name}】頭靠不到太低背，搖頭離店了！`, true);
+          }
+          g.state = "leave";
+          g.path = findPath2D(Math.floor(g.x), Math.floor(g.y), 19, 38);
+        }
       } else if (g.state === "queue") {
+        if (state.game.refundLockTimer > 0) continue; // 退貨處理期間 POS 暫停結帳
         g.queueTimer -= dt;
         if (g.queueTimer <= 0) {
-          state.game.revenue += g.spend;
+          const amount = g.targetProduct.effectivePrice;
+          state.game.revenue += amount;
+          state.game.soldHistory.push({
+            name: g.targetProduct.name,
+            sku: g.targetProduct.sku,
+            amount
+          });
           state.game.guests.splice(i, 1);
           updateHudStatus();
         }
+      } else if (g.state === "spooked" || g.state === "leave") {
+        state.game.guests.splice(i, 1);
+        updateHudStatus();
       }
     }
   }
